@@ -193,7 +193,11 @@ main {
 }
 
 .button.recommended {
-  box-shadow: 0 0 0 1px var(--ink), 0 10px 24px rgba(28, 25, 23, 0.12);
+  box-shadow:
+    0 0 0 1px var(--ink),
+    0 0 0 6px rgba(181, 154, 106, 0.16),
+    0 10px 24px rgba(28, 25, 23, 0.12);
+  position: relative;
 }
 
 .button.secondary.recommended {
@@ -432,7 +436,9 @@ main {
 .download-card:hover,
 .download-card.recommended {
   border-color: rgba(28, 25, 23, 0.42);
-  box-shadow: inset 3px 0 0 var(--ink);
+  box-shadow:
+    inset 3px 0 0 var(--ink),
+    0 0 0 6px rgba(181, 154, 106, 0.14);
   transform: translateY(-1px);
 }
 
@@ -444,6 +450,10 @@ main {
   letter-spacing: 0.08em;
   margin-top: auto;
   text-transform: uppercase;
+}
+
+.download-card.recommended {
+  position: relative;
 }
 
 .download-card .pill {

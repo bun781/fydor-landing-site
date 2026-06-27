@@ -1,6 +1,6 @@
-const platform = navigator.platform.toLowerCase();
+const platform = String(navigator.userAgentData?.platform ?? navigator.platform ?? "").toLowerCase();
 const userAgent = navigator.userAgent.toLowerCase();
-const isMac = platform.includes("mac") || userAgent.includes("mac os");
+const isMac = platform.includes("mac") || userAgent.includes("mac os") || userAgent.includes("macintosh");
 const isWindows = platform.includes("win") || userAgent.includes("windows");
 
 const preferredPlatform = isMac ? "mac" : isWindows ? "windows" : null;
@@ -12,4 +12,3 @@ if (preferredPlatform) {
       element.classList.add("recommended");
     });
 }
-
