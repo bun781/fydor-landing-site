@@ -126,6 +126,27 @@
           can move useful material between machines without subscriptions or a hosted account.
         </p>
       </section>
+
+      <section class="section install-notes" aria-labelledby="install-title">
+        <div>
+          <span class="eyebrow">Mac install</span>
+          <h2 id="install-title">If macOS blocks the app on first launch.</h2>
+        </div>
+        <div class="feature-list install-notes-list">
+          <article>
+            <h3>Best path</h3>
+            <p>Ship a signed and notarized build so most users can just drag Fydor into Applications and open it normally.</p>
+          </article>
+          <article>
+            <h3>If macOS warns</h3>
+            <p>Open <strong>System Settings &gt; Privacy &amp; Security</strong> and click <strong>Open Anyway</strong>, or Control-click the app in Finder and choose <strong>Open</strong>.</p>
+          </article>
+          <article>
+            <h3>Last resort</h3>
+            <p>For troubleshooting only, some users clear the quarantine flag with <code>xattr -dr com.apple.quarantine "/Applications/Fydor.app"</code>.</p>
+          </article>
+        </div>
+      </section>
     </main>
 
     <footer class="footer">
@@ -136,4 +157,3 @@
     <script src="script.js"></script>
   </body>
 </html>
-

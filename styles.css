@@ -361,6 +361,16 @@ main {
   color: var(--muted);
 }
 
+.install-notes-list code {
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  color: var(--ink);
+  font-family: ui-monospace, "SF Mono", Menlo, Monaco, monospace;
+  font-size: 12px;
+  padding: 1px 5px;
+}
+
 .download-panel {
   display: grid;
   gap: 24px;
@@ -480,4 +490,3 @@ main {
     gap: 12px;
   }
 }
-
