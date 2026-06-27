@@ -148,6 +148,17 @@ main {
   margin-top: 8px;
 }
 
+.platform-icon {
+  display: inline-block;
+  flex: 0 0 auto;
+  height: 16px;
+  width: 16px;
+}
+
+.button .platform-icon {
+  fill: currentColor;
+}
+
 .button {
   align-items: center;
   background: var(--ink);
@@ -181,6 +192,14 @@ main {
   opacity: 1;
 }
 
+.button.recommended {
+  box-shadow: 0 0 0 1px var(--ink), 0 10px 24px rgba(28, 25, 23, 0.12);
+}
+
+.button.secondary.recommended {
+  background: var(--surface);
+}
+
 .pill {
   background: transparent;
   border: 1px solid var(--line);
@@ -202,6 +221,12 @@ main {
 .pill-word {
   border-color: var(--word);
   color: var(--word);
+}
+
+.platform-pill {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
 }
 
 .app-preview {
@@ -417,7 +442,16 @@ main {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
+  margin-top: auto;
   text-transform: uppercase;
+}
+
+.download-card .pill {
+  align-self: start;
+}
+
+.download-card .platform-icon {
+  fill: currentColor;
 }
 
 .footer {
