@@ -355,10 +355,36 @@ main {
   padding: clamp(42px, 8vw, 78px) 0;
 }
 
+.page-hero {
+  display: grid;
+  gap: 18px;
+  max-width: 860px;
+  padding: clamp(54px, 10vw, 108px) 0 clamp(42px, 8vw, 78px);
+}
+
+.page-hero h1 {
+  font-size: clamp(56px, 10vw, 104px);
+}
+
 .split {
   display: grid;
   gap: 28px;
   grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+}
+
+.about-grid,
+.github-panel {
+  display: grid;
+  gap: 28px;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+}
+
+.github-panel {
+  align-items: center;
+}
+
+.github-panel .button {
+  justify-self: start;
 }
 
 .eyebrow {
@@ -492,6 +518,8 @@ main {
 
   .hero,
   .split,
+  .about-grid,
+  .github-panel,
   .download-grid {
     grid-template-columns: 1fr;
   }
