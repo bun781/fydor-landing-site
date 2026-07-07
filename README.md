@@ -21,3 +21,11 @@ The current buttons point to placeholder files:
 
 Replace those paths with real release URLs when installers are available.
 
+## Global Download Counter
+
+The live download count is served by `api/download-count.js` and needs a Redis-compatible Vercel KV or Upstash REST database. Set these environment variables in Vercel:
+
+- `KV_REST_API_URL`
+- `KV_REST_API_TOKEN`
+
+The API also accepts Upstash's native `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` names.
