@@ -154,6 +154,7 @@ main {
   flex-wrap: wrap;
   gap: 14px;
   margin-top: 10px;
+  width: 100%;
 }
 
 .hero-stat {
@@ -164,8 +165,10 @@ main {
   box-shadow: 0 10px 30px rgba(28, 25, 23, 0.06);
   display: grid;
   gap: 2px;
+  flex: 1 1 100%;
   min-width: 168px;
   padding: 14px 16px 13px;
+  width: 100%;
 }
 
 .hero-stat strong {
@@ -181,12 +184,6 @@ main {
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-}
-
-.hero-stat-caption {
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.35;
 }
 
 .platform-icon {
