@@ -148,6 +148,38 @@ main {
   margin-top: 8px;
 }
 
+.hero-stats {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 6px;
+}
+
+.hero-stat {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  display: grid;
+  gap: 4px;
+  min-width: 124px;
+  padding: 12px 14px;
+}
+
+.hero-stat strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.hero-stat span {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 .platform-icon {
   display: inline-block;
   flex: 0 0 auto;
@@ -551,6 +583,15 @@ main {
   .button,
   .hero-actions,
   .hero-actions a {
+    width: 100%;
+  }
+
+  .hero-stats {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .hero-stat {
     width: 100%;
   }
 
