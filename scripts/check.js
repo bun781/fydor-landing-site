@@ -27,7 +27,7 @@ console.log(`Checked ${files.length} JavaScript files and static HTML references
 function walk(dir) {
   const output = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if ([".git", "node_modules", "downloads"].includes(entry.name)) continue;
+    if ([".git", "node_modules", "downloads", "public"].includes(entry.name)) continue;
     const full = join(dir, entry.name);
     if (entry.isDirectory()) output.push(...walk(full)); else output.push(full);
   }
