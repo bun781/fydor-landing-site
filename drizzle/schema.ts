@@ -77,6 +77,11 @@ export const contributorDrafts = pgTable("contributor_drafts", {
   contentHash: text("content_hash").notNull(),
   schemaVersion: integer("schema_version").notNull(),
   generationSource: text("generation_source").notNull().default("manual"),
+  creationMethod: text("creation_method").notNull().default("ai"),
+  possibleDuplicate: boolean("possible_duplicate").notNull().default(false),
+  duplicateMatchSubmissionId: uuid("duplicate_match_submission_id"),
+  duplicateSimilarity: text("duplicate_similarity"),
+  duplicateReasons: jsonb("duplicate_reasons").notNull().default([]),
   promptTemplateVersion: text("prompt_template_version"),
   conversionSourceLessonId: text("conversion_source_lesson_id"),
   revision: integer("revision").notNull().default(1),
@@ -126,6 +131,11 @@ export const submissionVersions = pgTable("submission_versions", {
   contentHash: text("content_hash").notNull(),
   schemaVersion: integer("schema_version").notNull(),
   generationSource: text("generation_source").notNull(),
+  creationMethod: text("creation_method").notNull().default("ai"),
+  possibleDuplicate: boolean("possible_duplicate").notNull().default(false),
+  duplicateMatchSubmissionId: uuid("duplicate_match_submission_id"),
+  duplicateSimilarity: text("duplicate_similarity"),
+  duplicateReasons: jsonb("duplicate_reasons").notNull().default([]),
   promptTemplateVersion: text("prompt_template_version"),
   creatorConfirmed: boolean("creator_confirmed").notNull(),
   submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow()
@@ -218,6 +228,7 @@ export const publishedLessons = pgTable("published_lessons", {
   checksum: text("checksum").notNull(),
   license: text("license").notNull().default("CC BY 4.0"),
   compatibility: text("compatibility").notNull().default("Fydor 2.0+"),
+  contentHash: text("content_hash").notNull(),
   publishedAt: timestamp("published_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: updatedAt(),
   archivedAt: timestamp("archived_at", { withTimezone: true })
@@ -225,6 +236,18 @@ export const publishedLessons = pgTable("published_lessons", {
   foreignKey({ columns: [table.submissionId, table.publishedVersion], foreignColumns: [submissionVersions.submissionId, submissionVersions.version] }).onDelete("restrict"),
   index("published_library_idx").on(table.targetLanguage, table.baseLanguage, table.level, table.publishedAt).where(sql`${table.archivedAt} is null`),
   index("published_tags_idx").using("gin", table.tags)
+]);
+
+export const contributionContentHashes = pgTable("contribution_content_hashes", {
+  contentHash: text("content_hash").primaryKey(),
+  submissionId: uuid("submission_id").notNull().references(() => submissions.id, { onDelete: "cascade" }),
+  submissionVersion: integer("submission_version").notNull(),
+  state: text("state").notNull(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt()
+}, (table) => [
+  foreignKey({ columns: [table.submissionId, table.submissionVersion], foreignColumns: [submissionVersions.submissionId, submissionVersions.version] }).onDelete("cascade"),
+  index("contribution_hash_submission_idx").on(table.submissionId)
 ]);
 
 export const notifications = pgTable("notifications", {

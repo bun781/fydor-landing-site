@@ -6,6 +6,7 @@ const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 
 const migration = readFileSync(join(__dirname, "..", "migrations", "001_contributor_pipeline.sql"), "utf8");
+const packMigration = readFileSync(join(__dirname, "..", "migrations", "003_pack_contribution_workflow.sql"), "utf8");
 
 test("privileged mutation functions require the service role and database roles", () => {
   for (const fn of ["submit_draft", "claim_submission", "transition_submission", "set_moderator", "set_administrator"]) {
@@ -29,6 +30,13 @@ test("moderator removal preserves history while releasing access", () => {
   assert.match(block, /suspended_at=now\(\)/);
   assert.match(block, /moderation_assignments set state='released'/);
   assert.doesNotMatch(block, /delete from reviewer_feedback/);
+});
+
+test("pack contributions have one globally unique active hash registry and publication hash", () => {
+  assert.match(packMigration, /create table if not exists public\.contribution_content_hashes[\s\S]*content_hash text primary key/i);
+  assert.match(packMigration, /published_lessons_content_hash_unique[\s\S]*where content_hash is not null/i);
+  assert.match(packMigration, /duplicate_pack/);
+  assert.match(packMigration, /sync_contribution_hash_state/);
 });
 
 function functionBlock(name) {

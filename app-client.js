@@ -49,7 +49,13 @@ export async function api(path, options = {}) {
 
 export async function expectJson(response) {
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(errorMessage(data, `Request failed (${response.status}).`));
+  if (!response.ok) {
+    const error = data.error || data;
+    const details = Array.isArray(error.issues) && error.issues.length
+      ? ` ${error.issues.map((issue) => `${issue.path}: ${issue.message}`).join(" ")}`
+      : "";
+    throw new Error(`${errorMessage(error, `Request failed (${response.status}).`)}${details}`);
+  }
   return data;
 }
 

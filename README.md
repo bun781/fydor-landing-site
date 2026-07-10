@@ -32,7 +32,7 @@ The API also accepts Upstash's native `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDI
 
 ## Contributor pipeline
 
-The contributor, moderation, administration, and public-library implementation is documented in `docs/contributor-pipeline.md`. Apply `migrations/001_contributor_pipeline.sql` before enabling those routes.
+The contributor, moderation, administration, and public-library implementation is documented in `docs/contributor-pipeline.md`. The two-method pack contribution workflow, canonical hash rules, duplicate behavior, and migration steps are in `docs/contribution-pack-workflow.md`. Apply migrations `001_contributor_pipeline.sql`, `002_usernames.sql`, and `003_pack_contribution_workflow.sql` before enabling those routes.
 
 Drizzle ORM configuration lives in `drizzle.config.ts` and
 `drizzle/schema.ts` for migration tooling. `GET /api/library` reads published
@@ -44,8 +44,9 @@ privileged workspace actions.
 
 ## Pack Publishing
 
-`POST /api/packs` validates Fydor Pack JSON and uploads the canonical
-`.fydorpack` object to Supabase Storage. Set:
+Pack publication is now only performed after authenticated contribution and
+moderation. The legacy `POST /api/packs` route returns a migration response and
+does not bypass review. Set:
 
 - `SUPABASE_URL`
 - `SUPABASE_PUBLISHABLE_KEY` or `SUPABASE_ANON_KEY`

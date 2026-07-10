@@ -3,7 +3,7 @@
 const { authenticate, requireRole } = require("../lib/auth");
 const { db, rpc } = require("../lib/db");
 const { handleOptions, httpError, readJsonBody, requireMethod, send, sendError, setCors } = require("../lib/http");
-const { parseAndValidateLesson } = require("../lib/lesson-schema");
+const { detectNearDuplicates, findExactDuplicate, parseAndValidatePack } = require("../lib/pack-schema");
 const { buildLessonPrompt } = require("../lib/prompt-template");
 const { rateLimit } = require("../lib/rate-limit");
 
@@ -16,7 +16,7 @@ module.exports = async function handler(request, response) {
     const actor = await authenticate(request);
     await rateLimit(`${actor.id}:contributor`, 90);
     if (request.method === "GET") return await handleGet(request, response, actor);
-    const body = await readJsonBody(request);
+    const body = await readJsonBody(request, 5_200_000);
     return await handlePost(request, response, actor, body);
   } catch (error) {
     console.error("contributor request failed", { code: error?.code, status: error?.status });
@@ -58,7 +58,7 @@ async function handleGet(request, response, actor) {
     const draft = drafts[0];
     if (!draft) throw httpError(404, "not_found", "Contributor draft not found.");
     const reviews = await db(`sentence_review_progress?select=status&draft_id=eq.${id}`);
-    const total = draft.canonical_json.sentences.length;
+    const total = packSentences(draft.canonical_json).length;
     const reviewed = reviews.filter((row) => row.status === "reviewed").length;
     return send(response, 200, { preflight: {
       title: draft.title, targetLanguage: draft.target_language, baseLanguage: draft.base_language,
@@ -77,14 +77,15 @@ async function handlePost(request, response, actor, body) {
     requireRole(actor, ["user", "contributor", "admin", "super_admin"]);
     return send(response, 200, buildLessonPrompt(body.input || {}));
   }
-  if (action === "validate") {
-    const result = validate(body.lesson);
-    return send(response, result.ok ? 200 : 422, result);
+  if (action === "validate" || action === "validate_pack") {
+    const result = validateContributionPack(body.pack ?? body.lesson ?? body);
+    if (!result.ok) return send(response, 422, { error: { code: "invalid_pack", message: "The uploaded pack is not valid.", issues: result.issues } });
+    return send(response, 200, result);
   }
   if (action === "save_draft" || action === "convert_personal") {
     await rpc("enable_contributor", { p_user: actor.id });
-    const result = validate(body.lesson);
-    if (!result.ok) return send(response, 422, result);
+    const result = validateContributionPack(body.pack ?? body.lesson ?? body);
+    if (!result.ok) return send(response, 422, { error: { code: "invalid_pack", message: "The pack is not valid.", issues: result.issues } });
     const existingId = body.draftId ? uuid(body.draftId) : null;
     const record = {
       owner_id: actor.id,
@@ -93,10 +94,15 @@ async function handlePost(request, response, actor, body) {
       target_language: result.lesson.language,
       base_language: result.lesson.baseLanguage,
       level: result.lesson.level,
-      canonical_json: result.lesson,
+      canonical_json: result.pack,
       content_hash: result.contentHash,
-      schema_version: result.lesson.schemaVersion,
+      schema_version: result.pack.schemaVersion,
       generation_source: generationSource(body.generationSource),
+      creation_method: body.creationMethod === "upload" ? "upload" : "ai",
+      possible_duplicate: false,
+      duplicate_match_submission_id: null,
+      duplicate_similarity: null,
+      duplicate_reasons: [],
       prompt_template_version: optionalText(body.promptTemplateVersion, 120),
       conversion_source_lesson_id: action === "convert_personal" ? requiredText(body.personalLessonId, 200) : null
     };
@@ -129,7 +135,7 @@ async function handlePost(request, response, actor, body) {
     if (!draft) throw httpError(404, "not_found", "Contributor draft not found.");
     if (!["draft", "reviewing", "changes_requested", "withdrawn"].includes(draft.state)) throw httpError(409, "immutable", "Submitted versions cannot be edited.");
     const index = nonNegativeInt(body.sentenceIndex, "sentenceIndex");
-    if (index >= draft.canonical_json.sentences.length) throw httpError(400, "invalid_index", "Sentence index is outside the lesson.");
+    if (index >= packSentences(draft.canonical_json).length) throw httpError(400, "invalid_index", "Sentence index is outside the pack.");
     const status = ["unreviewed", "reviewed", "needs_work"].includes(body.status) ? body.status : null;
     if (!status) throw httpError(400, "invalid_status", "Invalid sentence review status.");
     const rows = await db("sentence_review_progress?on_conflict=draft_id,sentence_index", {
@@ -146,6 +152,19 @@ async function handlePost(request, response, actor, body) {
     requireRole(actor, ["contributor"]);
     const key = String(request.headers["idempotency-key"] || body.idempotencyKey || "").trim();
     if (!/^[A-Za-z0-9._:-]{16,160}$/.test(key)) throw httpError(400, "idempotency_required", "A valid idempotency key is required.");
+    const draftRows = await db(`contributor_drafts?select=id,owner_id,canonical_json,content_hash,title,target_language,base_language&owner_id=eq.${actor.id}&id=eq.${uuid(body.draftId)}&limit=1`);
+    if (!draftRows[0]) throw httpError(404, "not_found", "Contributor draft not found.");
+    const draft = draftRows[0];
+    const duplicate = await findSubmissionDuplicate(draft);
+    if (duplicate) throw httpError(409, duplicate.code, duplicate.message);
+    const nearDuplicate = await findPackNearDuplicate(draft);
+    await db(`contributor_drafts?id=eq.${draft.id}&owner_id=eq.${actor.id}`, { method: "PATCH", body: {
+      possible_duplicate: nearDuplicate.possibleDuplicate,
+      duplicate_match_submission_id: nearDuplicate.matchingPackId,
+      duplicate_similarity: nearDuplicate.possibleDuplicate ? nearDuplicate.highestOverlap : null,
+      duplicate_reasons: nearDuplicate.reasons,
+      updated_at: new Date().toISOString()
+    }});
     const result = await rpc("submit_draft", {
       p_actor: actor.id, p_draft: uuid(body.draftId),
       p_expected_revision: positiveInt(body.expectedRevision, "expectedRevision"),
@@ -169,8 +188,51 @@ async function handlePost(request, response, actor, body) {
   throw httpError(400, "invalid_action", "Unsupported contributor action.");
 }
 
-function validate(lesson) {
-  return parseAndValidateLesson(typeof lesson === "string" ? lesson : JSON.stringify(lesson));
+function validateContributionPack(value) {
+  let input = value;
+  if (typeof input === "string") {
+    try { input = JSON.parse(input); } catch { return { ok: false, errors: ["Malformed JSON."], issues: [{ path: "$", message: "Malformed JSON." }] }; }
+  }
+  if (input && input.type !== "fydor_pack" && Array.isArray(input.sentences)) input = wrapLegacyLesson(input);
+  try {
+    const result = parseAndValidatePack(input);
+    return { ok: true, errors: [], warnings: [], pack: result.pack, lesson: result.pack.lessons[0], contentHash: result.contentHash, sentenceCount: result.sentenceCount, byteLength: result.byteLength };
+  } catch (error) {
+    return { ok: false, errors: [error.message], issues: error.issues || [{ path: "$", message: error.message }] };
+  }
+}
+
+function wrapLegacyLesson(lesson) {
+  const now = new Date().toISOString();
+  return {
+    type: "fydor_pack", schemaVersion: 1,
+    id: `contributor-${String(lesson.title || "pack").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 72) || "pack"}`,
+    title: lesson.title, description: lesson.description, version: "1.0.0",
+    language: lesson.language, baseLanguage: lesson.baseLanguage, level: lesson.level, tags: lesson.tags,
+    createdAt: now, updatedAt: now,
+    lessons: [{ language: lesson.language, baseLanguage: lesson.baseLanguage, title: lesson.title, description: lesson.description, level: lesson.level, tags: lesson.tags, sentences: lesson.sentences }]
+  };
+}
+
+function packSentences(pack) {
+  if (Array.isArray(pack?.lessons)) return pack.lessons.flatMap((lesson) => lesson.sentences || []);
+  return Array.isArray(pack?.sentences) ? pack.sentences : [];
+}
+
+async function findSubmissionDuplicate(draft) {
+  const published = await db(`published_lessons?select=id,content_hash&content_hash=eq.${draft.content_hash}&archived_at=is.null&limit=1`);
+  if (published[0]) return { code: "duplicate_pack", message: "This pack already exists in the public library." };
+  const versions = await db(`submission_versions?select=submission_id,content_hash,submissions!inner(state,creator_id)&content_hash=eq.${draft.content_hash}&submissions.state=in.(submitted,language_approved,approved,published)&limit=10`);
+  if (versions[0]) {
+    const own = versions.some((version) => version.submissions?.creator_id === draft.owner_id);
+    return { code: "duplicate_pack", message: own ? "An identical pack is already awaiting review." : "An identical pack is already in the moderation pipeline." };
+  }
+  return null;
+}
+
+async function findPackNearDuplicate(draft) {
+  const candidates = await db(`submission_versions?select=submission_id,canonical_json,submissions!inner(id,state,target_language,base_language)&submissions.state=in.(submitted,language_approved,approved,published)&submissions.target_language=eq.${encodeURIComponent(draft.target_language)}&submissions.base_language=eq.${encodeURIComponent(draft.base_language)}&limit=200`);
+  return detectNearDuplicates(draft.canonical_json, candidates.map((row) => ({ id: row.submission_id, pack: row.canonical_json })));
 }
 function uuid(value) {
   const text = String(value || "");

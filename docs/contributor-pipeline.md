@@ -33,7 +33,7 @@ Origin parsing, URL construction, preview-origin handling, and chatbot destinati
 
 ## Manual chatbot workflow
 
-The generation workspace combines `fydor-lesson-v1.0.0` with topic, ideas, levels, goals, constraints, cultural context, sentence count, annotation preferences, and schema version. The only generation integration is manual:
+The generation workspace combines `fydor-pack-v1.0.0` with topic, ideas, levels, goals, constraints, cultural context, sentence count, annotation preferences, and schema version. The only generation integration is manual:
 
 1. Generate the prompt.
 2. Copy it, optionally opening the allowlisted `https://chatgpt.com/` or `https://claude.ai/` destination.
@@ -44,7 +44,7 @@ Fydor does not call provider APIs, store provider keys, scrape chat sites, acces
 
 ## Authoritative validation and sanitization
 
-`lib/lesson-schema.js` is authoritative for contributor and published content. It enforces a 1 MB limit, 24-level depth limit, strict JSON, duplicate-key rejection, dangerous-key rejection, strict schemas, supported languages, string/array/sentence limits, required translations, duplicate detection, annotation surface membership, control/bidirectional character rejection, and script-like HTML rejection. All UI rendering uses `textContent`.
+`lib/pack-schema.js` is authoritative for contributor and published pack content. It enforces a 5 MB limit, 24-level depth limit, strict JSON, dangerous-key rejection, strict desktop pack schemas, supported languages, string/array/sentence limits, required translations, duplicate detection, annotation surface membership, control/bidirectional character rejection, and script-like HTML rejection. All UI rendering uses `textContent`. `lib/lesson-schema.js` remains available for legacy lesson tooling, but it is not the contribution submission validator.
 
 The desktop Rust importer independently enforces compatible limits and rules because it is a separate runtime and must remain secure when importing local JSON. Published downloads are checksum-verified over stable canonical JSON before conversion to the existing local lesson shape and authoritative Rust validation.
 
@@ -70,7 +70,13 @@ Submission uses a transaction and idempotency key. It rechecks draft ownership, 
 
 ## Database model and migration
 
-`migrations/001_contributor_pipeline.sql` creates:
+`migrations/001_contributor_pipeline.sql` creates the base contributor and
+moderation model. `migrations/002_usernames.sql` adds username support and
+`migrations/003_pack_contribution_workflow.sql` adds the shared pack hash,
+creation-method, duplicate-warning, and publication-hash extensions. Apply all
+three through the normal Supabase migration runner in a test project first.
+
+The base migration creates:
 
 - profiles, roles, user roles, supported languages, moderator-language assignments
 - contributor drafts and sentence-review progress
@@ -80,7 +86,7 @@ Submission uses a transaction and idempotency key. It rechecks draft ownership, 
 - published lessons with an exact approved-version foreign key
 - notifications and idempotency records
 
-It includes foreign keys, checks, uniqueness constraints, partial claim/publication indexes, query indexes, row-level security, and transactional security-definer functions. Apply it through the normal Supabase migration runner in a test project first.
+It includes foreign keys, checks, uniqueness constraints, partial claim/publication indexes, query indexes, row-level security, and transactional security-definer functions.
 
 `drizzle/schema.ts` is the typed ORM mirror used for schema review and future
 Drizzle migrations. `drizzle.config.ts` writes generated migrations under

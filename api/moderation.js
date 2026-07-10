@@ -3,7 +3,9 @@
 const { authenticate, requireRole } = require("../lib/auth");
 const { db, rpc } = require("../lib/db");
 const { handleOptions, httpError, readJsonBody, requireMethod, send, sendError, setCors } = require("../lib/http");
+const { parseAndValidatePack, slugifyPackTitle } = require("../lib/pack-schema");
 const { rateLimit } = require("../lib/rate-limit");
+const { uploadPackObject } = require("../lib/storage");
 
 module.exports = async function handler(request, response) {
   if (handleOptions(request, response, { methods: "GET, POST, OPTIONS" })) return;
@@ -37,6 +39,10 @@ async function handleGet(request, response, actor) {
     const languageFilter = languages.length ? `&target_language=in.(${languages.join(",")})` : request.query?.language ? `&target_language=eq.${encodeURIComponent(String(request.query.language))}` : "";
     const from = (page - 1) * pageSize;
     const rows = await db(`submissions?select=id,creator_id,title,target_language,base_language,state,current_version,row_version,created_at,updated_at,moderation_assignments(id,moderator_id,state,assigned_at)&state=in.(${states.join(",")})${languageFilter}&order=created_at.asc&offset=${from}&limit=${pageSize}`);
+    for (const row of rows) {
+      const versions = await db(`submission_versions?select=content_hash,creation_method,possible_duplicate,duplicate_match_submission_id,duplicate_similarity,duplicate_reasons&submission_id=eq.${row.id}&version=eq.${row.current_version}&limit=1`);
+      Object.assign(row, versions[0] || {});
+    }
     return send(response, 200, { submissions: rows, page, pageSize });
   }
   if (action === "workspace") {
@@ -97,6 +103,10 @@ async function handlePost(request, response, actor, body) {
     const next = String(body.nextState || "");
     const actionId = String(request.headers["idempotency-key"] || body.actionId || "").trim();
     if (!/^[A-Za-z0-9._:-]{16,160}$/.test(actionId)) throw httpError(400, "idempotency_required", "A valid action identifier is required.");
+    if (next === "published") {
+      requireRole(actor, ["admin", "super_admin"]);
+      await publishVersion(uuid(body.submissionId), positiveInt(body.version));
+    }
     const result = await rpc("transition_submission", {
       p_actor: actor.id, p_submission: uuid(body.submissionId),
       p_expected_version: positiveInt(body.version), p_expected_row_version: positiveInt(body.rowVersion),
@@ -106,6 +116,20 @@ async function handlePost(request, response, actor, body) {
     return send(response, 200, { submission: result });
   }
   throw httpError(400, "invalid_action", "Unsupported moderation action.");
+}
+
+async function publishVersion(submissionId, version) {
+  const rows = await db(`submission_versions?select=canonical_json,content_hash&submission_id=eq.${submissionId}&version=eq.${version}&limit=1`);
+  if (!rows[0]) throw httpError(404, "not_found", "The reviewed pack version was not found.");
+  const result = parseAndValidatePack(rows[0].canonical_json);
+  if (result.contentHash !== rows[0].content_hash) throw httpError(409, "stale_pack", "The reviewed pack changed and must be reviewed again.");
+  const pack = result.pack;
+  const path = `${segment(pack.language)}/${segment(pack.baseLanguage)}/${segment(pack.id)}/${segment(pack.version)}/${slugifyPackTitle(pack.title)}.fydorpack`;
+  await uploadPackObject(path, JSON.stringify(pack, null, 2), { contentType: "application/vnd.fydor-pack+json" });
+}
+
+function segment(value) {
+  return String(value || "").toLowerCase().trim().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "unknown";
 }
 
 async function assertMayInspect(actor, submissionId) {
