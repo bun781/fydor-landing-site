@@ -10,10 +10,17 @@ Required server environment variables:
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY` (intentionally delivered to the sign-in client)
 - `SUPABASE_SERVICE_ROLE_KEY` (server only)
-- `DATABASE_URL`: shared transaction-mode Supabase pooler URL. Drizzle uses the
-  `postgres` driver with prepared statements disabled, as required by port 6543
-  transaction pooling.
-- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` (required in production for rate limiting)
+- `DATABASE_URL`: required only for Drizzle migration tooling; it is not used by
+  `GET /api/library`. The public library reads validated `.fydorpack` files
+  directly from the public `packs` Storage bucket using the server-only
+  Supabase credential.
+- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`: required in
+  production for rate-limited writes and privileged workspace actions. Public
+  library reads fail open if this optional protection is unavailable, with a
+  structured server warning so Redis configuration can still be repaired.
+
+The Vercel functions are Node.js functions (not Edge functions). This is
+required by the `postgres` database driver used by the library endpoint.
 
 Origin parsing, URL construction, preview-origin handling, and chatbot destinations are centralized in `lib/config.js`. API CORS accepts the configured origin and the exact current Vercel preview origin; the read-only public library permits all origins so the Tauri app can browse it. No client-provided callback URL is accepted.
 
@@ -88,21 +95,21 @@ Rollback is deliberately data-preserving: disable the new routes, archive public
 - `GET/POST /api/contributor`: prompt, validate, save/load/resume draft, convert personal copy, sentence review, preflight, submit/resubmit, withdraw, history, feedback view, notifications
 - `GET/POST /api/moderation`: queue, workspace/revision comparison data, claim, feedback, resolution, state transitions, audit
 - `GET/POST /api/admin`: verified-user search, moderator/language management, administrator management
-- `GET /api/library`: paginated public search/detail and version-aware download
+- `GET /api/library`: paginated public pack search/detail and direct `.fydorpack` download from Storage
 - `GET /api/client-config`: non-secret browser configuration and chatbot allowlist
 
 Requests have payload limits, structured errors, bearer authentication, server authorization, fixed-window production rate limits, optimistic concurrency, and idempotency on submission/transitions. Bearer APIs do not use ambient cookies, so CSRF tokens are not applicable.
 
 ## User interfaces
 
-- `/contribute.html`: prompt generation, chatbot launch, safe JSON import, draft resume, sentence review, preflight, immutable submission, withdrawal/history
+- `/contribute.html` (Fydor Exchange): public published-lesson search/filter/download at the top, followed by prompt generation, chatbot launch, safe JSON import, draft resume, sentence review, preflight, immutable submission, and withdrawal/history
 - `/moderate.html`: queue/claim, immutable sentence inspection, version feedback, request changes, language approval/rejection, admin approval/publication/archive
 - `/admin.html`: verified-user search and moderator/language changes
-- `/library.html`: published lesson search/filter/download
+- `/library.html`: permanent redirect to the Exchange public-library section
 
 ## Desktop import flow
 
-The desktop Exchange page calls only the configured `/api/library`. It downloads JSON into memory, compares manifest checksums, invokes the narrow `install_published_lesson` Tauri command, verifies the SHA-256 checksum again in Rust, rejects hostile JSON, validates schema compatibility, detects installed versions, and uses the existing SQLite lesson importer. Updates preserve review state for unchanged sentences and warn if reviewed sentences disappear.
+The desktop Exchange page calls only the configured `/api/library`. It downloads the validated `.fydorpack` into memory, verifies its SHA-256 checksum, rejects hostile JSON, validates schema compatibility, and passes it to the existing local pack importer. Updates preserve review state for unchanged sentences and warn if reviewed sentences disappear.
 
 The SQLite migration 6 adds only purpose and published-provenance columns to `lessons`; all existing rows become private personal lessons.
 

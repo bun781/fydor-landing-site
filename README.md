@@ -35,8 +35,12 @@ The API also accepts Upstash's native `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDI
 The contributor, moderation, administration, and public-library implementation is documented in `docs/contributor-pipeline.md`. Apply `migrations/001_contributor_pipeline.sql` before enabling those routes.
 
 Drizzle ORM configuration lives in `drizzle.config.ts` and
-`drizzle/schema.ts`. Set the untracked `DATABASE_URL` to Supabase's shared
-transaction-mode pooler; runtime connections use `prepare: false`.
+`drizzle/schema.ts` for migration tooling. `GET /api/library` reads published
+`.fydorpack` files directly from the Supabase Storage `packs` bucket; it does
+not require `DATABASE_URL`. The public-library read path treats Redis/KV rate
+limiting as optional, so a Redis outage cannot make published lessons
+unavailable. Redis remains required in production for rate-limited writes and
+privileged workspace actions.
 
 ## Pack Publishing
 

@@ -17,6 +17,7 @@ const entries = [
   "index.html",
   "library.html",
   "library.js",
+  "library-section.js",
   "moderate.html",
   "moderate.js",
   "script.js",

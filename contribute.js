@@ -1,4 +1,7 @@
 import { api, getConfig, randomActionId, setupAuth } from "./app-client.js";
+import { initPublicLibrary } from "./library-section.js";
+
+initPublicLibrary();
 
 const promptFields = [
   ["targetLanguage","Target language","ko"],["baseLanguage","Base language","en"],["level","Learner level","beginner"],

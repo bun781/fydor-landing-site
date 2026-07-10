@@ -1,5 +1,8 @@
 {
   "outputDirectory": "public",
+  "redirects": [
+    { "source": "/library.html", "destination": "/contribute.html#library", "permanent": true }
+  ],
   "headers": [
     {
       "source": "/(.*)",

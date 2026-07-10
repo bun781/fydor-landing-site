@@ -1,133 +1,173 @@
 "use strict";
 
-const { sql } = require("drizzle-orm");
-const { getDatabase } = require("../lib/database");
-const { handleOptions, httpError, requireMethod, send, sendError, setCors } = require("../lib/http");
-const { rateLimit } = require("../lib/rate-limit");
+const { parseAndValidatePack } = require("../lib/pack-schema");
+const { handleOptions, httpError, requireMethod, safeServerError, send, sendError, setCors } = require("../lib/http");
+const { rateLimit: defaultRateLimit } = require("../lib/rate-limit");
+const { listPackObjects: defaultListPackObjects, readPackObject: defaultReadPackObject } = require("../lib/storage");
 
-module.exports = async function handler(request, response) {
-  if (handleOptions(request, response, { public: true, methods: "GET, OPTIONS" })) return;
-  setCors(request, response, { public: true });
-  try {
-    requireMethod(request, ["GET"]);
-    await rateLimit(`public:${clientKey(request)}`, 120);
-    const database = getDatabase();
-    const id = request.query?.id ? stableId(request.query.id) : null;
-    if (id) return await getLesson(database, request, response, id);
-    return await listLessons(database, request, response);
-  } catch (error) {
-    console.error("library request failed", { code: error?.code, status: error?.status });
-    sendError(response, error);
-  }
-};
+function createLibraryHandler(options = {}) {
+  const listPackObjects = options.listPackObjects || defaultListPackObjects;
+  const readPackObject = options.readPackObject || defaultReadPackObject;
+  const rateLimit = options.rateLimit || defaultRateLimit;
+  const logger = options.logger || console;
 
-async function getLesson(database, request, response, id) {
-  const rows = await database.execute(sql`
-    select * from published_lessons
-    where stable_lesson_id = ${id} and archived_at is null
-    limit 1
-  `);
-  const lesson = rows[0];
-  if (!lesson) throw httpError(404, "not_found", "Published lesson not found.");
-
-  if (String(request.query?.download || "") === "1") {
-    const versions = await database.execute(sql`
-      select canonical_json, content_hash, version
-      from submission_versions
-      where submission_id = ${lesson.submission_id} and version = ${lesson.published_version}
-      limit 1
-    `);
-    if (!versions[0]) throw httpError(404, "not_found", "Published lesson version not found.");
-    response.setHeader("Content-Disposition", `attachment; filename="${id}-v${lesson.lesson_version}.json"`);
-    response.setHeader("Cache-Control", "public, max-age=300, immutable");
-    return send(response, 200, {
-      manifest: publicMetadata(lesson),
-      lesson: versions[0].canonical_json,
-      checksum: versions[0].content_hash
-    });
-  }
-
-  response.setHeader("Cache-Control", "public, max-age=60");
-  return send(response, 200, { lesson: publicMetadata(lesson) });
-}
-
-async function listLessons(database, request, response) {
-  const page = clampInt(request.query?.page, 1, 10000, 1);
-  const pageSize = clampInt(request.query?.pageSize, 1, 100, 24);
-  const conditions = [sql`archived_at is null`];
-  if (request.query?.language) conditions.push(sql`target_language = ${safeFilter(request.query.language)}`);
-  if (request.query?.baseLanguage) conditions.push(sql`base_language = ${safeFilter(request.query.baseLanguage)}`);
-  if (request.query?.level) conditions.push(sql`level = ${safeFilter(request.query.level)}`);
-  if (request.query?.tag) conditions.push(sql`tags @> array[${safeFilter(request.query.tag)}]::text[]`);
-
-  const query = String(request.query?.q || "").normalize("NFC").trim().slice(0, 100);
-  if (query) {
-    const pattern = `%${query}%`;
-    conditions.push(sql`(title ilike ${pattern} or description ilike ${pattern})`);
-  }
-  const order = request.query?.sort === "title"
-    ? sql`title asc`
-    : request.query?.sort === "oldest"
-      ? sql`published_at asc`
-      : sql`published_at desc`;
-  const offset = (page - 1) * pageSize;
-  const rows = await database.execute(sql`
-    select * from published_lessons
-    where ${sql.join(conditions, sql` and `)}
-    order by ${order}
-    offset ${offset}
-    limit ${pageSize}
-  `);
-  response.setHeader("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
-  return send(response, 200, {
-    lessons: rows.map(publicMetadata),
-    page,
-    pageSize,
-    hasMore: rows.length === pageSize
-  });
-}
-
-function publicMetadata(row) {
-  return {
-    id: row.stable_lesson_id,
-    title: row.title,
-    description: row.description,
-    targetLanguage: row.target_language,
-    baseLanguage: row.base_language,
-    level: row.level,
-    tags: row.tags,
-    sentenceCount: row.sentence_count,
-    schemaVersion: row.schema_version,
-    lessonVersion: row.lesson_version,
-    publishedAt: row.published_at,
-    updatedAt: row.updated_at,
-    checksum: row.checksum,
-    license: row.license,
-    compatibility: row.compatibility
+  return async function handler(request, response) {
+    if (handleOptions(request, response, { public: true, methods: "GET, OPTIONS" })) return;
+    setCors(request, response, { public: true });
+    let stage = "request_validation";
+    try {
+      requireMethod(request, ["GET"]);
+      stage = "rate_limit";
+      await rateLimit(`public:${clientKey(request)}`, 120, 60, { required: false });
+      const id = request.query?.id ? packPathFromId(request.query.id) : null;
+      stage = id ? "pack_download" : "pack_listing";
+      if (id) return await getPack(readPackObject, request, response, id);
+      return await listPacks(listPackObjects, readPackObject, request, response, logger);
+    } catch (error) {
+      logger.error("library request failed", {
+        event: "library_request_failed",
+        stage,
+        code: error?.code,
+        status: error?.status
+      });
+      sendError(response, error);
+    }
   };
 }
 
-function stableId(value) {
-  const text = String(value || "");
-  if (!/^lesson-[0-9a-f-]{36}$/i.test(text)) throw httpError(400, "invalid_id", "Invalid lesson identifier.");
-  return text;
+async function getPack(readPackObject, request, response, path) {
+  const source = await readPackObject(path);
+  const result = parsePack(source, path);
+  if (String(request.query?.download || "") === "1") {
+    response.setHeader("Content-Disposition", `attachment; filename="${fileName(path)}"`);
+    response.setHeader("Content-Type", "application/vnd.fydor-pack+json; charset=utf-8");
+    response.setHeader("Cache-Control", "public, max-age=300, immutable");
+    return response.status(200).send(JSON.stringify(result.pack, null, 2));
+  }
+  response.setHeader("Cache-Control", "public, max-age=60");
+  return send(response, 200, { pack: publicMetadata(result, path) });
 }
 
-function safeFilter(value) {
-  const text = String(value || "").normalize("NFC").trim();
-  if (!/^[\p{L}\p{N} ._-]{1,80}$/u.test(text)) throw httpError(400, "invalid_filter", "Invalid filter value.");
-  return text;
+async function listPacks(listPackObjects, readPackObject, request, response, logger) {
+  const page = queryInt(request.query?.page, "page", 1, 10000, 1);
+  const pageSize = queryInt(request.query?.pageSize, "pageSize", 1, 100, 24);
+  const objects = await listPackObjects({ limit: 500 });
+  const entries = await mapWithConcurrency(objects, 8, async (object) => {
+    try {
+      const result = parsePack(await readPackObject(object.path), object.path);
+      return publicMetadata(result, object.path, object);
+    } catch (error) {
+      logger.warn("skipping invalid public pack", {
+        event: "public_pack_skipped",
+        code: error?.code,
+        path: safePackPath(object.path)
+      });
+      return null;
+    }
+  });
+  const filtered = entries.filter(Boolean).filter((pack) => matches(pack, request.query || {}));
+  sortPacks(filtered, String(request.query?.sort || "newest"));
+  const offset = (page - 1) * pageSize;
+  const packs = filtered.slice(offset, offset + pageSize);
+  response.setHeader("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+  // lessons remains an alias for existing clients while the Exchange migrates to pack terminology.
+  return send(response, 200, { packs, lessons: packs, page, pageSize, hasMore: offset + pageSize < filtered.length });
 }
 
-function clampInt(value, min, max, fallback) {
-  const number = Number(value);
-  return Number.isInteger(number) ? Math.min(max, Math.max(min, number)) : fallback;
+function parsePack(source, path) {
+  try {
+    return parseAndValidatePack(source);
+  } catch {
+    throw safeServerError(503, "storage_unavailable", `The published pack at ${safePackPath(path)} is unavailable.`);
+  }
+}
+
+function publicMetadata(result, path, object = {}) {
+  const pack = result.pack;
+  return {
+    id: packId(path),
+    title: pack.title,
+    description: pack.description || "Published Fydor lesson pack.",
+    targetLanguage: pack.language,
+    baseLanguage: pack.baseLanguage,
+    level: pack.level || "all levels",
+    tags: pack.tags || [],
+    sentenceCount: result.sentenceCount,
+    lessonCount: pack.lessons.length,
+    schemaVersion: pack.schemaVersion,
+    lessonVersion: pack.version,
+    publishedAt: object.createdAt || pack.createdAt || null,
+    updatedAt: object.updatedAt || pack.updatedAt || null,
+    checksum: result.checksum,
+    license: pack.license || "License not specified",
+    compatibility: "fydor-pack-v1"
+  };
+}
+
+function matches(pack, query) {
+  const filters = [
+    ["language", pack.targetLanguage], ["baseLanguage", pack.baseLanguage], ["level", pack.level]
+  ];
+  for (const [name, actual] of filters) {
+    if (query[name] && normalizeFilter(query[name]) !== normalizeFilter(actual)) return false;
+  }
+  if (query.tag && !pack.tags.some((tag) => normalizeFilter(tag) === normalizeFilter(query.tag))) return false;
+  if (query.q) {
+    const value = String(query.q).normalize("NFC").trim().toLocaleLowerCase().slice(0, 100);
+    if (value && !`${pack.title} ${pack.description} ${pack.tags.join(" ")}`.toLocaleLowerCase().includes(value)) return false;
+  }
+  return true;
+}
+
+function sortPacks(packs, sort) {
+  if (sort === "title") packs.sort((a, b) => a.title.localeCompare(b.title));
+  else if (sort === "oldest") packs.sort((a, b) => dateValue(a.publishedAt) - dateValue(b.publishedAt));
+  else packs.sort((a, b) => dateValue(b.publishedAt) - dateValue(a.publishedAt));
+}
+
+async function mapWithConcurrency(items, concurrency, mapper) {
+  const output = new Array(items.length);
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (next < items.length) {
+      const index = next++;
+      output[index] = await mapper(items[index]);
+    }
+  }));
+  return output;
+}
+
+function packId(path) { return Buffer.from(path, "utf8").toString("base64url"); }
+
+function packPathFromId(value) {
+  let path;
+  try { path = Buffer.from(String(value || ""), "base64url").toString("utf8"); } catch { path = ""; }
+  if (!/^[A-Za-z0-9._/-]{1,600}\.fydorpack$/.test(path) || path.includes("..") || path.startsWith("/")) {
+    throw httpError(400, "invalid_id", "Invalid pack identifier.");
+  }
+  return path;
+}
+
+function safePackPath(path) { return String(path).replace(/[^A-Za-z0-9._/-]/g, "_").slice(0, 600); }
+function fileName(path) { return safePackPath(path).split("/").pop() || "fydor-pack.fydorpack"; }
+function dateValue(value) { const time = Date.parse(value || ""); return Number.isFinite(time) ? time : 0; }
+function normalizeFilter(value) { return String(value || "").normalize("NFC").trim().toLocaleLowerCase(); }
+
+function queryInt(value, name, min, max, fallback) {
+  if (value === undefined || value === null || value === "") return fallback;
+  const text = String(value);
+  if (!/^\d+$/.test(text)) throw httpError(400, "invalid_query", `${name} must be an integer.`);
+  const number = Number(text);
+  if (!Number.isSafeInteger(number) || number < min || number > max) throw httpError(400, "invalid_query", `${name} must be between ${min} and ${max}.`);
+  return number;
 }
 
 function clientKey(request) {
   return String(request.headers["x-forwarded-for"] || request.socket?.remoteAddress || "unknown")
-    .split(",")[0]
-    .trim()
-    .replace(/[^a-fA-F0-9:.]/g, "")
-    .slice(0, 80);
+    .split(",")[0].trim().replace(/[^a-fA-F0-9:.]/g, "").slice(0, 80);
 }
+
+module.exports = createLibraryHandler();
+module.exports.createLibraryHandler = createLibraryHandler;
+module.exports.packId = packId;
+module.exports.packPathFromId = packPathFromId;
