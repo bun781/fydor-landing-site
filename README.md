@@ -29,3 +29,23 @@ The live download count is served by `api/download-count.js` and needs a Redis-c
 - `KV_REST_API_TOKEN`
 
 The API also accepts Upstash's native `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` names.
+
+## Contributor pipeline
+
+The contributor, moderation, administration, and public-library implementation is documented in `docs/contributor-pipeline.md`. Apply `migrations/001_contributor_pipeline.sql` before enabling those routes.
+
+Drizzle ORM configuration lives in `drizzle.config.ts` and
+`drizzle/schema.ts`. Set the untracked `DATABASE_URL` to Supabase's shared
+transaction-mode pooler; runtime connections use `prepare: false`.
+
+## Pack Publishing
+
+`POST /api/packs` validates Fydor Pack JSON and uploads the canonical
+`.fydorpack` object to Supabase Storage. Set:
+
+- `SUPABASE_URL`
+- `SUPABASE_PUBLISHABLE_KEY` or `SUPABASE_ANON_KEY`
+- `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_PACK_BUCKET` (defaults to `packs`)
+
+Environment-specific administrator-bootstrap instructions belong in the ignored `ADMIN_BOOTSTRAP.local.md` file.
