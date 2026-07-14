@@ -38,6 +38,14 @@ test("validates and canonicalizes Fydor packs before upload", () => {
 test("rejects malformed or unsafe packs", () => {
   assert.throws(() => parseAndValidatePack("{}"), /Pack type/);
   assert.throws(
+    () => parseAndValidatePack('{"type":"fydor_pack","type":"fydor_pack"}'),
+    /Duplicate JSON key: type/
+  );
+  assert.throws(
+    () => parseAndValidatePack(JSON.stringify(samplePack).replace('"sentences"', '"__proto__":{"admin":true},"sentences"')),
+    /Dangerous JSON key: __proto__/
+  );
+  assert.throws(
     () => parseAndValidatePack(JSON.stringify({ ...samplePack, lessons: [{ ...samplePack.lessons[0], title: "<script>x</script>" }] })),
     /unsafe HTML/
   );

@@ -22,7 +22,7 @@ Required server environment variables:
 The Vercel functions are Node.js functions (not Edge functions). This is
 required by the `postgres` database driver used by the library endpoint.
 
-Origin parsing, URL construction, preview-origin handling, and chatbot destinations are centralized in `lib/config.js`. API CORS accepts the configured origin and the exact current Vercel preview origin; the read-only public library permits all origins so the Tauri app can browse it. No client-provided callback URL is accepted.
+Origin parsing, URL construction, preview-origin handling, and chatbot destinations are centralized in `lib/config.js`. API CORS accepts the configured origin, the exact current Vercel preview origin, and trusted desktop app origins used by Tauri/local development; the read-only public library permits all origins so the Tauri app can browse it. No client-provided callback URL is accepted.
 
 ## Lesson-purpose model
 
@@ -44,7 +44,7 @@ Fydor does not call provider APIs, store provider keys, scrape chat sites, acces
 
 ## Authoritative validation and sanitization
 
-`lib/pack-schema.js` is authoritative for contributor and published pack content. It enforces a 5 MB limit, 24-level depth limit, strict JSON, dangerous-key rejection, strict desktop pack schemas, supported languages, string/array/sentence limits, required translations, duplicate detection, annotation surface membership, control/bidirectional character rejection, and script-like HTML rejection. All UI rendering uses `textContent`. `lib/lesson-schema.js` remains available for legacy lesson tooling, but it is not the contribution submission validator.
+`lib/http.js` quarantines parsed JSON request bodies before route handlers see them: only JSON primitives, arrays, and plain/null-prototype records survive, dangerous object keys are rejected, and depth/value-count limits cap hostile payloads. `lib/pack-schema.js` is authoritative for contributor and published pack content. It enforces a 5 MB limit, 24-level depth limit, strict JSON, duplicate-key and dangerous-key rejection before parsing, strict desktop pack schemas, supported languages, string/array/sentence limits, required translations, duplicate detection, annotation surface membership, control/bidirectional character rejection, and script-like HTML rejection. All UI rendering uses `textContent`. `lib/lesson-schema.js` remains available for legacy lesson tooling, but it is not the contribution submission validator.
 
 The desktop Rust importer independently enforces compatible limits and rules because it is a separate runtime and must remain secure when importing local JSON. Published downloads are checksum-verified over stable canonical JSON before conversion to the existing local lesson shape and authoritative Rust validation.
 
