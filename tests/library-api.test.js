@@ -97,16 +97,16 @@ test("downloads the selected pack directly from Storage", async () => {
   assert.match(result.headers["Content-Disposition"], /\.fydorpack/);
 });
 
-test("the Exchange owns the public library and old library links redirect there", () => {
+test("the public library is separate from the contributor workspace", () => {
   const exchange = readFileSync(join(__dirname, "..", "contribute.html"), "utf8");
   const legacy = readFileSync(join(__dirname, "..", "library.html"), "utf8");
   const redirects = readFileSync(join(__dirname, "..", "vercel.json"), "utf8");
   const section = readFileSync(join(__dirname, "..", "library-section.js"), "utf8");
-  assert.match(exchange, /data-public-library/);
-  assert.match(exchange, /id="library"/);
+  assert.doesNotMatch(exchange, /data-public-library/);
+  assert.doesNotMatch(exchange, /id="library"/);
   assert.doesNotMatch(exchange, /data-admin|data-moderation/);
-  assert.match(legacy, /location\.replace\(`contribute\.html\$\{location\.search\}#library`\)/);
-  assert.match(redirects, /"source": "\/library\.html"/);
+  assert.match(legacy, /data-public-library/);
+  assert.doesNotMatch(redirects, /contribute\.html#library/);
   assert.match(section, /Download verified Fydor pack/);
 });
 

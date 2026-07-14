@@ -1,33 +1,150 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Browse, download, import, and contribute Fydor lesson packs.">
-  <title>Fydor Exchange</title><link rel="icon" href="assets/fydor-logo.png"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="workspace.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Create and submit Fydor lesson packs with a guided contributor workflow.">
+  <title>Contribute packs · Fydor Exchange</title>
+  <link rel="icon" href="assets/fydor-logo.png">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="workspace.css">
 </head>
-<body>
-  <header class="site-header"><a class="brand" href="index.html"><img class="brand-mark" src="assets/fydor-logo.png" alt=""><span>Fydor</span></a><nav class="nav"><a href="#library">Library</a><a href="#contribute">Contribute</a><a href="moderate.html">Moderate</a><a href="admin.html">Admin</a></nav></header>
-  <main class="workspace-main">
-    <div class="workspace-header"><div><span class="pill pill-accent">Fydor Exchange</span><h1>Find a lesson, then make it your own.</h1><p class="lede">Browse administrator-published, immutable lesson versions and download them for import into Fydor.</p></div></div>
-    <section class="workspace-card public-library" id="library" data-public-library aria-labelledby="library-title">
-      <div class="workspace-header"><div><span class="pill pill-accent">Published lessons</span><h2 id="library-title">Public library</h2><p class="muted">Search reviewed lessons before opening the contributor workspace.</p></div></div>
-      <div class="workspace-actions" aria-label="Public library filters"><input class="input" data-search placeholder="Search lessons" aria-label="Search lessons"><input class="input" data-language placeholder="Target language" aria-label="Target language"><input class="input" data-base-language placeholder="Base language" aria-label="Base language"><input class="input" data-level placeholder="Level" aria-label="Level"><input class="input" data-tag placeholder="Tag" aria-label="Tag"><select data-sort aria-label="Sort lessons"><option value="newest">Newest</option><option value="oldest">Oldest</option><option value="title">Title</option></select><button class="button" data-find>Search</button></div>
-      <p data-library-status aria-live="polite"></p><div class="sentence-list" data-library></div><div class="workspace-actions"><button class="button secondary" data-more>Load more</button><button class="button secondary" data-library-retry hidden>Retry</button></div>
-    </section>
-    <div class="workspace-header" id="contribute"><div><span class="pill pill-accent">Contributor workspace</span><h2>Contribute to Fydor</h2><p class="lede">Create a lesson pack with the guided workflow or submit a completed Fydor JSON pack from your computer.</p></div><span class="status-badge unreviewed">Contributor draft</span></div>
-    <section class="workspace-card"><h2>Account</h2><p class="muted">Username is required when creating an account and is optional when signing in.</p><form class="auth-strip" data-auth-form><label class="workspace-field"><span>Email</span><input name="email" type="email" autocomplete="email" required></label><label class="workspace-field"><span>Password</span><input name="password" type="password" autocomplete="current-password" minlength="8" required></label><label class="workspace-field"><span>Username <small>(new accounts)</small></span><input name="username" type="text" autocomplete="username" maxlength="64"></label><button class="button" type="submit">Sign in</button><button class="button secondary" data-sign-up type="button">Create account</button></form><button class="button secondary" data-sign-out type="button" hidden>Sign out</button><p class="muted" data-auth-status></p></section>
-    <ol class="contributor-stepper" data-stepper hidden aria-label="Contributor steps"><li data-step-indicator="1" class="active"><span>1</span>Prompt</li><li data-step-indicator="2"><span>2</span>Import</li><li data-step-indicator="3"><span>3</span>Review</li><li data-step-indicator="4"><span>4</span>Submit</li></ol>
-    <div data-workspace hidden>
-      <section class="workspace-card contribution-methods" aria-labelledby="method-title"><h2 id="method-title">Choose how to contribute</h2><div class="method-selector" role="tablist" aria-label="Contribution method"><button class="method-card active" type="button" role="tab" aria-selected="true" data-method="ai"><strong>Generate with AI</strong><span>Use the guided workflow to create a lesson pack.</span><span class="button">Start generating</span></button><button class="method-card" type="button" role="tab" aria-selected="false" data-method="upload"><strong>Choose from Existing Pack</strong><span>Choose a completed Fydor JSON pack from your computer.</span><span class="button secondary">Choose pack</span></button></div><p class="muted" data-method-status>AI generation is selected.</p></section>
-      <section class="workspace-card upload-panel" data-upload-panel hidden aria-labelledby="upload-title"><div class="workspace-header"><div><h2 id="upload-title">Choose from Existing Pack</h2><p class="muted">Select a completed Fydor JSON pack. The file is parsed and checked again on the server before it can be submitted.</p></div><button class="button secondary" type="button" data-upload-clear>Choose another file</button></div><label class="pack-dropzone" data-upload-dropzone><input class="hidden-input" data-upload-file type="file" accept=".json,application/json" aria-label="Choose an existing Fydor JSON pack"><strong>Drop an existing .json pack here</strong><span>or choose a pack from your computer · maximum 5 MB</span></label><p data-upload-file-name class="muted"></p><p data-upload-status aria-live="polite"></p><div class="pack-preview" data-upload-preview></div><div class="workspace-actions"><button class="button" type="button" data-upload-continue disabled>Continue to sentence review</button></div></section>
-      <div class="workspace-grid" data-ai-workspace>
-        <section class="workspace-card" data-step="1"><h2>1. Generate lesson prompt</h2><p class="workspace-notice">ChatGPT and Claude open as ordinary chat websites. Fydor does not control those sessions or read browser data.</p><form data-prompt-form></form><div class="workspace-actions"><button class="button" data-build-prompt>Generate lesson prompt</button><button class="button secondary" data-open-chatgpt>Copy prompt and open ChatGPT</button><button class="button secondary" data-open-claude>Copy prompt and open Claude</button><button class="button secondary" data-copy-prompt>Copy prompt</button></div><label class="workspace-field"><span>Final prompt · template <b data-template-version>not generated</b></span><textarea class="workspace-code" data-prompt-output readonly></textarea></label><div class="workspace-actions step-navigation"><span></span><button class="button" data-step-next="1">Next: Import lesson</button></div></section>
-        <section class="workspace-card" data-step="2"><h2>2. Import generated JSON</h2><p class="workspace-notice">Model output is untrusted. Fydor checks size, depth, duplicate keys, dangerous keys, schema fields, text safety, and annotation surfaces before saving.</p><div class="workspace-actions"><select data-saved-drafts aria-label="Saved contributor drafts"><option value="">New contributor draft</option></select><button class="button secondary" data-load-draft>Resume selected draft</button></div><label class="workspace-field"><span>Generated lesson pack JSON</span><textarea class="workspace-code" data-json-input placeholder="Paste a Fydor pack JSON object or one legacy lesson object."></textarea></label><div class="workspace-actions"><button class="button secondary" data-validate>Validate pack</button><button class="button" data-save-draft>Save contributor draft</button></div><p data-import-status></p><div class="workspace-actions step-navigation"><button class="button secondary" data-step-back="2">Back</button><button class="button" data-step-next="2">Save draft &amp; review</button></div></section>
+<body class="contribute-body">
+  <header class="site-header">
+    <a class="brand" href="index.html"><img class="brand-mark" src="assets/fydor-logo.png" alt=""><span>Fydor</span></a>
+    <nav class="nav" aria-label="Main navigation">
+      <a href="library.html">Library</a>
+      <a class="active" href="contribute.html" aria-current="page">Contribute</a>
+      <a href="moderate.html">Moderate</a>
+      <a href="admin.html">Admin</a>
+    </nav>
+  </header>
+
+  <main class="workspace-main contribute-page">
+    <section class="contribute-hero" aria-labelledby="contribute-title">
+      <div>
+        <span class="eyebrow">Fydor Exchange · Contributor workspace</span>
+        <h1 id="contribute-title">Make a pack worth studying.</h1>
       </div>
-      <section class="workspace-card" data-step="3" data-review-section hidden><div class="workspace-header"><div><h2>3. Review every sentence</h2><p class="muted">This is the exact pack content that will be submitted. Review every sentence and annotation before continuing.</p></div><span data-review-count></span></div><div class="pack-preview" data-pack-preview></div><div class="review-progress"><span data-review-bar></span></div><div class="workspace-actions"><select data-review-filter aria-label="Review filter"><option value="all">All sentences</option><option value="incomplete">Incomplete</option><option value="reviewed">Reviewed</option><option value="needs_work">Needs work</option></select><select data-sentence-jump aria-label="Jump to sentence"></select><button class="button secondary" data-previous>Previous sentence</button><button class="button secondary" data-next>Next sentence</button></div><div data-sentence-review></div><div class="workspace-actions"><button class="button secondary" data-needs-work>Mark needs work</button><button class="button" data-reviewed>Mark reviewed</button></div><div class="workspace-actions step-navigation"><button class="button secondary" data-step-back="3">Back</button><button class="button" data-step-next="3">Next: Submission</button></div></section>
-      <section class="workspace-card" data-step="4" data-preflight-section hidden><h2>4. Submission preflight</h2><div data-preflight></div><label><input type="checkbox" data-confirm> I confirm that I reviewed every sentence and annotation.</label><div class="workspace-actions step-navigation"><button class="button secondary" data-step-back="4">Back</button><button class="button" data-submit>Submit immutable version for review</button></div><p data-submit-status></p></section>
+      <p class="contribute-hero-copy">Build language lessons with the same careful pipeline Fydor uses on desktop: choose your source, validate every sentence, and send a polished version to moderation.</p>
+    </section>
+
+    <section class="contributor-entry" data-contributor-entry aria-labelledby="entry-title">
+      <div class="entry-auth">
+        <span class="entry-kicker">01 · Your workspace</span>
+        <h2 id="entry-title">Sign in to contribute</h2>
+        <p class="muted">Your drafts, sentence reviews, and submission history stay attached to your account.</p>
+        <form class="entry-auth-form" data-auth-form>
+          <label class="workspace-field"><span>Email</span><input name="email" type="email" autocomplete="email" required></label>
+          <label class="workspace-field"><span>Password</span><input name="password" type="password" autocomplete="current-password" minlength="8" required></label>
+          <label class="workspace-field"><span>Username <small>(new accounts)</small></span><input name="username" type="text" autocomplete="username" maxlength="64"></label>
+          <div class="entry-auth-actions">
+            <button class="button" type="submit">Sign in</button>
+            <button class="button secondary" data-sign-up type="button">Create account</button>
+          </div>
+        </form>
+        <p class="auth-status" data-auth-status aria-live="polite"></p>
+      </div>
+
+      <div class="entry-guide">
+        <span class="entry-kicker">02 · How it works</span>
+        <h2>Guidelines and steps</h2>
+        <p class="muted guide-intro">Contribute original, useful material that another learner can open and study without extra context.</p>
+        <ol class="guide-steps">
+          <li><span>1</span><div><strong>Choose a source</strong><p>Use the guided LLM prompt or bring a pack you already built in Fydor.</p></div></li>
+          <li><span>2</span><div><strong>Check the content</strong><p>Validate the schema, then review translations, words, grammar, and chunks sentence by sentence.</p></div></li>
+          <li><span>3</span><div><strong>Submit for moderation</strong><p>Once every sentence is marked reviewed, the immutable version enters the moderation queue.</p></div></li>
+        </ol>
+        <div class="guide-note"><strong>Before you start</strong><span>Only submit content you have the right to share. Never include secrets, private data, or unlicensed source material.</span></div>
+      </div>
+    </section>
+
+    <div class="contributor-workspace" data-workspace hidden>
+      <div class="workspace-session-bar">
+        <div><span class="entry-kicker">Contributor workspace</span><strong>Ready when you are.</strong></div>
+        <button class="button secondary" data-sign-out type="button">Sign out</button>
+      </div>
+
+      <div class="workspace-heading">
+        <div>
+          <span class="eyebrow">Create a lesson pack</span>
+          <h2>From idea to reviewed version.</h2>
+        </div>
+        <p class="muted">Save a draft at any point. Nothing becomes public until it passes moderation.</p>
+      </div>
+
+      <ol class="contributor-stepper" data-stepper aria-label="Contributor steps">
+        <li data-step-indicator="1" class="active"><span>1</span><strong>Source</strong><small>Choose a path</small></li>
+        <li data-step-indicator="2"><span>2</span><strong>Prompt</strong><small>Shape the lesson</small></li>
+        <li data-step-indicator="3"><span>3</span><strong>Import</strong><small>Validate the pack</small></li>
+        <li data-step-indicator="4"><span>4</span><strong>Review</strong><small>Check every sentence</small></li>
+        <li data-step-indicator="5"><span>5</span><strong>Submit</strong><small>Send to moderation</small></li>
+      </ol>
+
+      <section class="workspace-card source-step" data-step="1" aria-labelledby="source-title">
+        <div class="step-heading"><div><span class="step-number">Step 1</span><h2 id="source-title">Choose how you want to contribute</h2><p class="muted">Both paths create the same Fydor pack draft and end with the same sentence review.</p></div></div>
+        <div class="method-selector" role="tablist" aria-label="Contribution method">
+          <button class="method-card active" type="button" role="tab" aria-selected="true" data-method="ai">
+            <span class="method-icon">✦</span><strong>Build with an LLM</strong><span>Describe the lesson, generate a Fydor-ready prompt, and bring the model’s JSON back here.</span><span class="method-link">Start with a prompt →</span>
+          </button>
+          <button class="method-card" type="button" role="tab" aria-selected="false" data-method="upload">
+            <span class="method-icon">↥</span><strong>Upload an existing pack</strong><span>Bring a `.fydorpack` or `.json` export from the desktop app and continue through validation.</span><span class="method-link">Choose a file →</span>
+          </button>
+        </div>
+        <p class="method-status muted" data-method-status>LLM-assisted generation is selected.</p>
+      </section>
+
+      <div data-ai-workspace>
+        <p class="workspace-status" data-import-status aria-live="polite"></p>
+        <section class="workspace-card flow-step" data-step="2" aria-labelledby="prompt-title">
+          <div class="step-heading"><div><span class="step-number">Step 2</span><h2 id="prompt-title">Shape the lesson with a prompt</h2><p class="muted">Tell the model what would make this useful to a real learner. Fydor never controls or reads the chat session.</p></div><span class="status-badge unreviewed">LLM assisted</span></div>
+          <form class="prompt-form" data-prompt-form></form>
+          <div class="workspace-actions prompt-actions"><button class="button" data-build-prompt type="button">Generate lesson prompt</button><button class="button secondary" data-open-chatgpt type="button">Copy &amp; open ChatGPT</button><button class="button secondary" data-open-claude type="button">Copy &amp; open Claude</button><button class="button secondary" data-copy-prompt type="button">Copy prompt</button></div>
+          <label class="workspace-field prompt-output-field"><span>Generated prompt · <b data-template-version>not generated</b></span><textarea class="workspace-code" data-prompt-output readonly placeholder="Your safe, schema-aware prompt will appear here."></textarea></label>
+          <div class="workspace-actions step-navigation"><button class="button secondary" data-step-back="2" type="button">Back to source</button><button class="button" data-step-next="2" type="button">Next: paste model output</button></div>
+        </section>
+
+        <section class="workspace-card flow-step" data-step="3" aria-labelledby="import-title">
+          <div class="step-heading"><div><span class="step-number">Step 3</span><h2 id="import-title">Import the generated pack</h2><p class="muted">Paste one strict Fydor pack JSON object. Legacy single-lesson JSON is accepted and wrapped for you.</p></div></div>
+          <div class="workspace-notice"><strong>Model output is untrusted.</strong> The server checks size, nesting, duplicate keys, allowed fields, safe text, annotation surfaces, and schema compatibility before saving.</div>
+          <label class="workspace-field"><span>Generated lesson pack JSON</span><textarea class="workspace-code import-code" data-json-input placeholder="Paste a Fydor pack JSON object here…"></textarea></label>
+          <div class="workspace-actions"><button class="button secondary" data-validate type="button">Validate pack</button><button class="button secondary" data-save-draft type="button">Save contributor draft</button></div>
+          <div class="workspace-actions step-navigation"><button class="button secondary" data-step-back="3" type="button">Back to prompt</button><button class="button" data-step-next="3" type="button">Save &amp; review pack</button></div>
+        </section>
+      </div>
+
+      <section class="workspace-card flow-step upload-panel" data-upload-panel data-step="3" hidden aria-labelledby="upload-title">
+        <div class="step-heading"><div><span class="step-number">Step 3</span><h2 id="upload-title">Upload an existing pack</h2><p class="muted">Choose a pack exported from Fydor. It will use the same validation, review, and moderation path as an LLM-generated pack.</p></div><span class="status-badge private">Desktop export</span></div>
+        <label class="pack-dropzone" data-upload-dropzone><input class="hidden-input" data-upload-file type="file" accept=".fydorpack,.json,application/json,application/vnd.fydor-pack+json" aria-label="Choose an existing Fydor pack"><span class="drop-icon">↥</span><strong>Drop your pack here</strong><span>or choose a `.fydorpack` / `.json` file · maximum 5 MB</span></label>
+        <p data-upload-file-name class="selected-file"></p><p data-upload-status aria-live="polite"></p>
+        <div class="pack-preview" data-upload-preview></div>
+        <div class="workspace-actions step-navigation"><button class="button secondary" data-upload-clear type="button">Choose another file</button><button class="button secondary" data-step-back="3" type="button">Back to source</button><button class="button" data-upload-continue type="button" disabled>Continue to review</button></div>
+      </section>
+
+      <section class="workspace-card flow-step review-step" data-step="4" data-review-section hidden aria-labelledby="review-title">
+        <div class="step-heading"><div><span class="step-number">Step 4</span><h2 id="review-title">Review every sentence</h2><p class="muted">Read the exact content that will be sent to moderation. Mark a sentence reviewed only when the translation and annotations are ready.</p></div><span data-review-count class="review-count"></span></div>
+        <div class="review-progress"><span data-review-bar></span></div>
+        <div class="review-toolbar"><select data-review-filter aria-label="Review filter"><option value="all">All sentences</option><option value="incomplete">Incomplete</option><option value="reviewed">Reviewed</option><option value="needs_work">Needs work</option></select><select data-sentence-jump aria-label="Jump to sentence"></select><button class="button secondary" data-previous type="button">Previous</button><button class="button secondary" data-next type="button">Next</button></div>
+        <div class="pack-preview review-pack-preview" data-pack-preview></div>
+        <div data-sentence-review></div>
+        <div class="review-actions"><button class="button secondary" data-needs-work type="button">Needs work</button><button class="button" data-reviewed type="button">Mark reviewed</button></div>
+        <div class="workspace-actions step-navigation"><button class="button secondary" data-step-back="4" type="button">Back to import</button><button class="button" data-step-next="4" type="button">Next: submission</button></div>
+      </section>
+
+      <section class="workspace-card flow-step" data-step="5" data-preflight-section hidden aria-labelledby="submission-title">
+        <div class="step-heading"><div><span class="step-number">Step 5</span><h2 id="submission-title">Final submission check</h2><p class="muted">This creates an immutable version for moderation. You can withdraw a submitted version later from your history.</p></div></div>
+        <div class="preflight-grid" data-preflight></div>
+        <label class="confirm-row"><input type="checkbox" data-confirm> <span>I confirm that I reviewed every sentence and annotation, and that I have the right to share this content.</span></label>
+        <div class="workspace-actions step-navigation"><button class="button secondary" data-step-back="5" type="button">Back to review</button><button class="button" data-submit type="button">Submit immutable version</button></div>
+        <p data-submit-status aria-live="polite"></p>
+      </section>
+
+      <section class="workspace-card submissions-card" data-submissions-section hidden>
+        <div class="workspace-header"><div><span class="step-number">Your history</span><h2>Drafts and submissions</h2><p class="muted">Submitted versions are immutable. Feedback remains attached to the version that was reviewed.</p></div><button class="button secondary" data-refresh-submissions type="button">Refresh</button></div>
+        <div class="workspace-actions draft-resume"><select data-saved-drafts aria-label="Saved contributor drafts"><option value="">New contributor draft</option></select><button class="button secondary" data-load-draft type="button">Resume selected draft</button></div>
+        <div class="sentence-list" data-submissions></div>
+      </section>
     </div>
-    <section class="workspace-card" data-submissions-section hidden><div class="workspace-header"><div><h2>Submission history</h2><p class="muted">Submitted versions are immutable. Feedback remains attached to the version that was reviewed.</p></div><button class="button secondary" data-refresh-submissions>Refresh</button></div><div class="sentence-list" data-submissions></div></section>
   </main>
   <script type="module" src="contribute.js"></script>
 </body>
