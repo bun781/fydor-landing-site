@@ -8,7 +8,7 @@ Required server environment variables:
 
 - `FYDOR_WEB_ORIGIN` (or `NEXT_PUBLIC_FYDOR_WEB_ORIGIN` / `VITE_FYDOR_WEB_ORIGIN`): canonical website origin. HTTPS is mandatory except on localhost. Vercel preview deployments fall back to their trusted `VERCEL_URL`.
 - `SUPABASE_URL`
-- `SUPABASE_ANON_KEY` (intentionally delivered to the sign-in client)
+- `SUPABASE_PUBLISHABLE_KEY` (or legacy `SUPABASE_ANON_KEY`, server only)
 - `SUPABASE_SERVICE_ROLE_KEY` (server only)
 - `DATABASE_URL`: required only for Drizzle migration tooling; it is not used by
   `GET /api/library`. The public library reads validated `.fydorpack` files
@@ -22,7 +22,7 @@ Required server environment variables:
 The Vercel functions are Node.js functions (not Edge functions). This is
 required by the `postgres` database driver used by the library endpoint.
 
-Origin parsing, URL construction, preview-origin handling, and chatbot destinations are centralized in `lib/config.js`. API CORS accepts the configured origin, the exact current Vercel preview origin, and trusted desktop app origins used by Tauri/local development; the read-only public library permits all origins so the Tauri app can browse it. No client-provided callback URL is accepted.
+Origin parsing, URL construction, preview-origin handling, and chatbot destinations are centralized in `lib/config.js`. Authenticated API CORS accepts only the configured website origin or the exact current Vercel preview origin; the read-only public library permits all origins so the Tauri app can browse it. No client-provided callback URL is accepted.
 
 ## Lesson-purpose model
 
@@ -104,7 +104,7 @@ Rollback is deliberately data-preserving: disable the new routes, archive public
 - `GET /api/library`: paginated public pack search/detail and direct `.fydorpack` download from Storage
 - `GET /api/client-config`: non-secret browser configuration and chatbot allowlist
 
-Requests have payload limits, structured errors, bearer authentication, server authorization, fixed-window production rate limits, optimistic concurrency, and idempotency on submission/transitions. Bearer APIs do not use ambient cookies, so CSRF tokens are not applicable.
+Requests have payload limits, structured errors, HttpOnly cookie authentication, server authorization, fixed-window production rate limits, optimistic concurrency, and idempotency on submission/transitions. Authenticated mutations require same-origin request signals and use `SameSite=Strict` cookies for CSRF resistance.
 
 ## User interfaces
 

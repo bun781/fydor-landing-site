@@ -38,7 +38,7 @@ let phase=1;
 
 function setPhase(next){phase=next;for(const section of stepSections)section.hidden=Number(section.dataset.step)!==phase;for(const indicator of stepper.querySelectorAll("[data-step-indicator]")){const step=Number(indicator.dataset.stepIndicator);indicator.classList.toggle("active",step===phase);indicator.classList.toggle("complete",step<phase);if(step===phase)indicator.setAttribute("aria-current","step");else indicator.removeAttribute("aria-current");}if(creationMethod==="upload")uploadPanel.hidden=phase>=3;}
 
-setupAuth(async()=>{workspace.hidden=false;stepper.hidden=false;submissionsSection.hidden=false;setPhase(1);await Promise.all([loadDrafts(),loadSubmissions()]);});
+setupAuth(async()=>{workspace.hidden=false;stepper.hidden=false;submissionsSection.hidden=false;setPhase(conversionSource?2:1);await Promise.all([loadDrafts(),loadSubmissions()]);if(conversionSource)setStatus(importStatus,"A personal lesson was copied from Fydor. Paste it into the lesson JSON field, then continue through the same contributor review workflow.");});
 
 document.querySelector("[data-build-prompt]").addEventListener("click",async()=>{
   setStatus(importStatus,"Building prompt…");

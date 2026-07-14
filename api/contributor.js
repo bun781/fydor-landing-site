@@ -2,7 +2,7 @@
 
 const { authenticate, requireRole } = require("../lib/auth");
 const { db, rpc } = require("../lib/db");
-const { handleOptions, httpError, readJsonBody, requireMethod, send, sendError, setCors } = require("../lib/http");
+const { handleOptions, httpError, readJsonBody, requireMethod, requireSameOrigin, send, sendError, setCors } = require("../lib/http");
 const { detectNearDuplicates, findExactDuplicate, parseAndValidatePack } = require("../lib/pack-schema");
 const { buildLessonPrompt } = require("../lib/prompt-template");
 const { rateLimit } = require("../lib/rate-limit");
@@ -13,7 +13,8 @@ module.exports = async function handler(request, response) {
   response.setHeader("Cache-Control", "no-store");
   try {
     requireMethod(request, ["GET", "POST"]);
-    const actor = await authenticate(request);
+    if (request.method === "POST") requireSameOrigin(request);
+    const actor = await authenticate(request, response);
     await rateLimit(`${actor.id}:contributor`, 90);
     if (request.method === "GET") return await handleGet(request, response, actor);
     const body = await readJsonBody(request, 5_200_000);

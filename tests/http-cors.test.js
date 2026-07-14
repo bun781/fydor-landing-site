@@ -15,7 +15,7 @@ function response() {
   };
 }
 
-test("authenticated API CORS allows desktop app origins", () => {
+test("trusted desktop origins remain recognized for non-cookie integrations", () => {
   assert.equal(isTrustedDesktopOrigin("http://127.0.0.1:3001"), true);
   assert.equal(isTrustedDesktopOrigin("http://localhost:5173"), true);
   assert.equal(isTrustedDesktopOrigin("http://tauri.localhost"), true);
@@ -23,15 +23,29 @@ test("authenticated API CORS allows desktop app origins", () => {
   assert.equal(isTrustedDesktopOrigin("https://example.com"), false);
 });
 
-test("authenticated API CORS echoes trusted desktop origins", () => {
+test("authenticated API CORS only allows the website origin", () => {
   const previous = process.env.FYDOR_WEB_ORIGIN;
   process.env.FYDOR_WEB_ORIGIN = "https://fydor.vercel.app";
 
   try {
     const result = response();
-    setCors(request("http://tauri.localhost"), result);
-    assert.equal(result.headers["Access-Control-Allow-Origin"], "http://tauri.localhost");
-    assert.equal(result.headers["Access-Control-Allow-Headers"], "Authorization, Content-Type, Idempotency-Key");
+    setCors(request("https://fydor.vercel.app"), result);
+    assert.equal(result.headers["Access-Control-Allow-Origin"], "https://fydor.vercel.app");
+    assert.equal(result.headers["Access-Control-Allow-Credentials"], "true");
+    assert.equal(result.headers["Access-Control-Allow-Headers"], "Content-Type, Idempotency-Key");
+  } finally {
+    if (previous === undefined) delete process.env.FYDOR_WEB_ORIGIN;
+    else process.env.FYDOR_WEB_ORIGIN = previous;
+  }
+});
+
+test("same-origin checks reject cross-site mutations", () => {
+  const { requireSameOrigin } = require("../lib/http");
+  const previous = process.env.FYDOR_WEB_ORIGIN;
+  process.env.FYDOR_WEB_ORIGIN = "https://fydor.vercel.app";
+  try {
+    assert.throws(() => requireSameOrigin({ headers: { origin: "https://evil.example" } }), /Cross-origin/);
+    assert.doesNotThrow(() => requireSameOrigin({ headers: { origin: "https://fydor.vercel.app" } }));
   } finally {
     if (previous === undefined) delete process.env.FYDOR_WEB_ORIGIN;
     else process.env.FYDOR_WEB_ORIGIN = previous;

@@ -2,7 +2,7 @@
 
 const { authenticate, requireRole } = require("../lib/auth");
 const { db, rpc } = require("../lib/db");
-const { handleOptions, httpError, readJsonBody, requireMethod, send, sendError, setCors } = require("../lib/http");
+const { handleOptions, httpError, readJsonBody, requireMethod, requireSameOrigin, send, sendError, setCors } = require("../lib/http");
 const { rateLimit } = require("../lib/rate-limit");
 
 module.exports = async function handler(request, response) {
@@ -10,7 +10,8 @@ module.exports = async function handler(request, response) {
   setCors(request, response); response.setHeader("Cache-Control", "no-store");
   try {
     requireMethod(request, ["GET", "POST"]);
-    const actor = await authenticate(request); requireRole(actor, ["admin", "super_admin"]);
+    if (request.method === "POST") requireSameOrigin(request);
+    const actor = await authenticate(request, response); requireRole(actor, ["admin", "super_admin"]);
     await rateLimit(`${actor.id}:admin`, 60);
     if (request.method === "GET") {
       const action = String(request.query?.action || "moderators");
