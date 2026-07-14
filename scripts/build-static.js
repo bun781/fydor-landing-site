@@ -20,6 +20,7 @@ const entries = [
   "library-section.js",
   "moderate.html",
   "moderate.js",
+  "pack-preview.js",
   "script.js",
   "styles.css",
   "workspace.css",

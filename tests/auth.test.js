@@ -2,6 +2,8 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const { readFileSync } = require("node:fs");
+const { join } = require("node:path");
 const { clearSessionCookies, parseCookies, setSessionCookies } = require("../lib/auth");
 
 function response() {
@@ -25,4 +27,11 @@ test("signing out expires both session cookies", () => {
   clearSessionCookies(result, { headers: { host: "fydor.vercel.app" } });
   assert.equal(result.headers["Set-Cookie"].length, 2);
   assert.ok(result.headers["Set-Cookie"].every((cookie) => cookie.includes("Max-Age=0")));
+});
+
+test("contributor auth cannot fall back to a credential-bearing GET", () => {
+  const form = readFileSync(join(__dirname, "..", "contribute.html"), "utf8");
+  const build = readFileSync(join(__dirname, "..", "scripts", "build-static.js"), "utf8");
+  assert.match(form, /<form class="entry-auth-form" data-auth-form method="post">/);
+  assert.match(build, /"pack-preview\.js"/);
 });
