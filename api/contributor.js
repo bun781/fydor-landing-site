@@ -15,9 +15,14 @@ module.exports = async function handler(request, response) {
     requireMethod(request, ["GET", "POST"]);
     if (request.method === "POST") requireSameOrigin(request);
     const actor = await authenticate(request, response);
-    await rateLimit(`${actor.id}:contributor`, 90);
-    if (request.method === "GET") return await handleGet(request, response, actor);
+    if (request.method === "GET") {
+      await rateLimit(`${actor.id}:contributor`, 90);
+      return await handleGet(request, response, actor);
+    }
     const body = await readJsonBody(request, 5_200_000);
+    if (body.action !== "validate" && body.action !== "validate_pack") {
+      await rateLimit(`${actor.id}:contributor`, 90);
+    }
     return await handlePost(request, response, actor, body);
   } catch (error) {
     console.error("contributor request failed", { code: error?.code, status: error?.status });
