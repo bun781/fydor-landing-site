@@ -22,6 +22,33 @@ test("validates pack errors with paths and rejects oversized content", () => {
   assert.throws(() => parseAndValidatePack(JSON.stringify({ ...pack(), description: "x".repeat(5_000_001) })), /5 MB|too large/);
 });
 
+test("accepts legacy packs with repeated annotation surfaces", () => {
+  const source = pack({ lessons: [{ language: "ko", baseLanguage: "en", title: "Lesson", sentences: [
+    { text: "저는 학생입니다.", translation: "I am a student.", grammar: [
+      { pattern: "은/는", surface: "는", meaning: "topic marker" },
+      { pattern: "N입니다", surface: "학생입니다", meaning: "formal copula" },
+      { pattern: "입니다", surface: "학생입니다", meaning: "polite statement ending" }
+    ] }
+  ] }] });
+
+  const result = parseAndValidatePack(JSON.stringify(source));
+
+  assert.equal(result.pack.lessons[0].sentences[0].grammar.length, 3);
+});
+
+test("compacts exact duplicate annotations in normalized packs", () => {
+  const source = pack({ lessons: [{ language: "ko", baseLanguage: "en", title: "Lesson", sentences: [
+    { text: "안녕하세요.", translation: "Hello.", words: [
+      { surface: "안녕하세요", meaning: "hello" },
+      { surface: "안녕하세요", meaning: "hello" }
+    ] }
+  ] }] });
+
+  const result = parseAndValidatePack(JSON.stringify(source));
+
+  assert.deepEqual(result.pack.lessons[0].sentences[0].words, [{ surface: "안녕하세요", meaning: "hello" }]);
+});
+
 test("canonical content hash ignores metadata and object key order but preserves sentence order and text", () => {
   const original = pack();
   const reordered = JSON.parse(JSON.stringify(original, (key, value) => key === "lessons" ? value : value));
