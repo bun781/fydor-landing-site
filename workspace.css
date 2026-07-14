@@ -85,6 +85,8 @@
 .contributor-workspace { display: grid; gap: 24px; margin-top: 34px; }
 .workspace-session-bar { align-items: center; border-bottom: 1px solid var(--workspace-line); display: flex; gap: 16px; justify-content: space-between; padding-bottom: 17px; }
 .workspace-session-bar strong { font-family: Georgia, "Times New Roman", serif; font-size: 20px; font-weight: 400; }
+.workspace-connection-status { color: var(--workspace-muted); font-size: 13px; margin: -12px 0 0; min-height: 0; }
+.workspace-connection-status:not(:empty) { background: #fbf6ee; border-left: 3px solid var(--workspace-accent); padding: 10px 13px; }
 .workspace-heading { align-items: end; display: flex; gap: 24px; justify-content: space-between; padding: 20px 0 6px; }
 .workspace-heading h2 { font-size: clamp(32px, 5vw, 56px); letter-spacing: -.04em; }
 .workspace-heading > p { max-width: 310px; }
@@ -100,6 +102,7 @@
 .contributor-stepper li.complete span { background: #f6ecdf; border-color: var(--workspace-accent); color: var(--workspace-accent); }
 
 .workspace-card { background: var(--workspace-paper); border: 1px solid var(--workspace-line); border-radius: 5px; display: grid; gap: 18px; padding: clamp(22px, 4vw, 38px); }
+.workspace-card { scroll-margin-top: 94px; }
 .workspace-card h2, .workspace-card h3, .workspace-card p { margin: 0; }
 .step-heading { align-items: start; display: flex; gap: 18px; justify-content: space-between; }
 .step-heading h2 { font-size: clamp(26px, 4vw, 40px); letter-spacing: -.03em; }
@@ -186,6 +189,19 @@
 .sentence-list .sentence-review { padding: 16px; }
 .table-wrap { overflow: auto; }.workspace-table { border-collapse: collapse; width: 100%; }.workspace-table td, .workspace-table th { border-bottom: 1px solid var(--workspace-soft-line); padding: 10px; text-align: left; vertical-align: top; }
 .auth-strip { align-items: end; display: flex; flex-wrap: wrap; gap: 8px; }.auth-strip .workspace-field { min-width: 220px; }
+
+@media (min-width: 960px) {
+  .contribute-page { max-width: 1480px; }
+  .contributor-stepper { background: rgba(250, 249, 247, .94); padding-top: 26px; position: sticky; top: 68px; z-index: 4; }
+  .workspace-card { min-height: 440px; }
+  .review-step { grid-template-columns: minmax(0, 1fr) minmax(320px, .42fr); }
+  .review-step > .step-heading, .review-step > .review-progress, .review-step > .review-toolbar, .review-step > .step-navigation { grid-column: 1 / -1; }
+  .review-step > .review-pack-preview { grid-column: 2; grid-row: 4 / span 2; max-height: 620px; }
+  .review-step > [data-sentence-review], .review-step > .review-actions { grid-column: 1; }
+  .review-actions { align-items: stretch; }
+  .review-actions .button { min-width: 148px; }
+  .submissions-card { min-height: auto; }
+}
 
 @media (max-width: 820px) {
   .contribute-hero, .contributor-entry { grid-template-columns: 1fr; }

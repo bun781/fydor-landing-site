@@ -152,5 +152,8 @@ function errorMessage(error, fallback = "Request failed.") {
     ? error.message
     : String(error?.message || (typeof error?.error === "string" ? error.error : "") || error?.msg || error?.error_description || fallback);
   if (/rate limit/i.test(message) || /too many requests/i.test(message)) return `${message} Please wait a moment and try again.`;
+  if (message === "The request could not be completed.") {
+    return "The contributor service is unavailable right now. Your validated pack is still open in this page; wait a moment and try again.";
+  }
   return message || fallback;
 }
