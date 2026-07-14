@@ -16,7 +16,7 @@ module.exports = async function handler(request, response) {
     if (request.method === "POST") requireSameOrigin(request);
     const actor = await authenticate(request, response);
     if (request.method === "GET") {
-      await rateLimit(`${actor.id}:contributor`, 90);
+      await rateLimit(`${actor.id}:contributor`, 90, 60, { required: false });
       return await handleGet(request, response, actor);
     }
     const body = await readJsonBody(request, 5_200_000);
