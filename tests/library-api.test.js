@@ -104,7 +104,8 @@ test("the public library is separate from the contributor workspace", () => {
   const section = readFileSync(join(__dirname, "..", "library-section.js"), "utf8");
   assert.doesNotMatch(exchange, /data-public-library/);
   assert.doesNotMatch(exchange, /id="library"/);
-  assert.doesNotMatch(exchange, /data-admin|data-moderation/);
+  assert.doesNotMatch(exchange, /data-moderation/);
+  assert.match(exchange, /data-admin-entry[^>]+hidden/);
   assert.match(legacy, /data-public-library/);
   assert.doesNotMatch(redirects, /contribute\.html#library/);
   assert.match(section, /Download verified Fydor pack/);

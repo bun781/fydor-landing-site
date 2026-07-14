@@ -32,6 +32,7 @@ module.exports = async function handler(request, response) {
 
 async function handleGet(request, response, actor) {
   const action = String(request.query?.action || "drafts");
+  if (action === "me") return send(response, 200, { actor: { id: actor.id, roles: actor.roles } });
   if (action === "drafts") {
     const rows = await db(`contributor_drafts?select=id,state,title,target_language,base_language,level,content_hash,schema_version,generation_source,prompt_template_version,revision,created_at,updated_at&owner_id=eq.${actor.id}&order=updated_at.desc&limit=100`);
     return send(response, 200, { drafts: rows });

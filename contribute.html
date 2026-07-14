@@ -16,7 +16,6 @@
       <a href="library.html">Library</a>
       <a class="active" href="contribute.html" aria-current="page">Contribute</a>
       <a href="moderate.html">Moderate</a>
-      <a href="admin.html">Admin</a>
     </nav>
   </header>
 
@@ -62,8 +61,12 @@
     <div class="contributor-workspace" data-workspace hidden>
       <div class="workspace-session-bar">
         <div><span class="entry-kicker">Contributor workspace</span><strong>Ready when you are.</strong></div>
-        <button class="button secondary" data-sign-out type="button">Sign out</button>
+        <div class="workspace-actions">
+          <a class="button secondary" data-admin-entry href="admin.html" hidden>Administration</a>
+          <button class="button secondary" data-sign-out type="button">Sign out</button>
+        </div>
       </div>
+      <p class="workspace-connection-status" data-workspace-status aria-live="polite"></p>
 
       <div class="workspace-heading">
         <div>

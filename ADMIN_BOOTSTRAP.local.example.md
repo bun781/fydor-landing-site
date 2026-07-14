@@ -9,4 +9,4 @@ Copy this template locally and replace placeholders only in the ignored copy. Ne
 - Secret source: `<approved password manager or deployment secret store>`
 - Operator approval/change record: `<reference>`
 
-Use the repository's `npm run admin:bootstrap` command only from a controlled operator environment. Verify the role after assignment, revoke it when required, rotate any temporarily exposed credentials, and retain the database audit event.
+Use the repository's `npm run admin:bootstrap` command only from a controlled operator environment. To create a verified account and assign `super_admin`, keep the password out of shell history and source control by supplying it through `ADMIN_BOOTSTRAP_PASSWORD`, then run `npm run admin:bootstrap -- --create --email <verified email>`. Verify the role after assignment, revoke it when required, rotate any temporarily exposed credentials, and retain the database audit event.

@@ -39,6 +39,13 @@ test("pack contributions have one globally unique active hash registry and publi
   assert.match(packMigration, /sync_contribution_hash_state/);
 });
 
+test("admin pack deletion archives the publication before deleting its public object", () => {
+  const admin = readFileSync(join(__dirname, "..", "api", "admin.js"), "utf8");
+  assert.match(admin, /body\.action === "delete_pack"/);
+  assert.match(admin, /p_next: "archived"/);
+  assert.match(admin, /await deletePackObject\(path\)/);
+});
+
 function functionBlock(name) {
   const match = migration.match(new RegExp(`create or replace function public\\.${name}\\b([\\s\\S]*?)end \\$\\$;`, "i"));
   assert.ok(match, `missing function ${name}`);
