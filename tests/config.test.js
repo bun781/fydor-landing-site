@@ -2,7 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { assertServerConfig, normalizeWebOrigin, providerUrl, webUrl } = require("../lib/config");
+const { assertServerConfig, configuredWebOrigin, normalizeWebOrigin, providerUrl, webUrl } = require("../lib/config");
 
 test("normalizes safe production, preview, and localhost origins", () => {
   assert.equal(normalizeWebOrigin("https://fydor.example///"), "https://fydor.example");
@@ -41,4 +41,8 @@ test("accepts both current and legacy Supabase key names", () => {
   });
   assert.equal(legacy.supabasePublishableKey, "anon_local");
   assert.equal(legacy.supabaseSecretKey, "service_local");
+});
+
+test("production auth does not trust a localhost development origin", () => {
+  assert.equal(configuredWebOrigin({ VERCEL_ENV: "production", FYDOR_WEB_ORIGIN: "http://localhost:8080" }), "https://fydor.vercel.app");
 });
