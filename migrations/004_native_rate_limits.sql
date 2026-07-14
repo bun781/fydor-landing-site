@@ -13,7 +13,6 @@ create or replace function public.enforce_rate_limit(p_key text, p_limit integer
 language plpgsql security definer set search_path = public as $$
 declare v_count integer; v_now timestamptz := now();
 begin
-  if coalesce(current_setting('request.jwt.claim.role', true), '') <> 'service_role' then raise exception 'service role required'; end if;
   if char_length(coalesce(p_key, '')) not between 1 and 240 then raise exception 'invalid rate limit key'; end if;
   if p_limit not between 1 and 100000 or p_window_seconds not between 1 and 86400 then raise exception 'invalid rate limit window'; end if;
   delete from rate_limit_windows where ctid in (select ctid from rate_limit_windows where expires_at <= v_now limit 100);
@@ -37,7 +36,6 @@ create or replace function public.download_count(p_increment boolean, p_base_cou
 language plpgsql security definer set search_path = public as $$
 declare v_count bigint;
 begin
-  if coalesce(current_setting('request.jwt.claim.role', true), '') <> 'service_role' then raise exception 'service role required'; end if;
   if p_base_count < 0 then raise exception 'invalid base count'; end if;
   insert into website_metrics(metric_key, metric_value) values ('download_count', p_base_count) on conflict do nothing;
   if p_increment then
