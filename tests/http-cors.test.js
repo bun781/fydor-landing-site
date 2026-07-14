@@ -2,7 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { isTrustedDesktopOrigin, readJsonBody, sanitizeJsonValue, setCors } = require("../lib/http");
+const { readJsonBody, sanitizeJsonValue, setCors } = require("../lib/http");
 
 function request(origin) {
   return { headers: { origin } };
@@ -15,14 +15,6 @@ function response() {
   };
 }
 
-test("trusted desktop origins remain recognized for non-cookie integrations", () => {
-  assert.equal(isTrustedDesktopOrigin("http://127.0.0.1:3001"), true);
-  assert.equal(isTrustedDesktopOrigin("http://localhost:5173"), true);
-  assert.equal(isTrustedDesktopOrigin("http://tauri.localhost"), true);
-  assert.equal(isTrustedDesktopOrigin("tauri://localhost"), true);
-  assert.equal(isTrustedDesktopOrigin("https://example.com"), false);
-});
-
 test("authenticated API CORS only allows the website origin", () => {
   const previous = process.env.FYDOR_WEB_ORIGIN;
   process.env.FYDOR_WEB_ORIGIN = "https://fydor.vercel.app";
@@ -31,8 +23,7 @@ test("authenticated API CORS only allows the website origin", () => {
     const result = response();
     setCors(request("https://fydor.vercel.app"), result);
     assert.equal(result.headers["Access-Control-Allow-Origin"], "https://fydor.vercel.app");
-    assert.equal(result.headers["Access-Control-Allow-Credentials"], "true");
-    assert.equal(result.headers["Access-Control-Allow-Headers"], "Content-Type, Idempotency-Key");
+    assert.equal(result.headers["Access-Control-Allow-Headers"], "Authorization, Content-Type, Idempotency-Key");
   } finally {
     if (previous === undefined) delete process.env.FYDOR_WEB_ORIGIN;
     else process.env.FYDOR_WEB_ORIGIN = previous;

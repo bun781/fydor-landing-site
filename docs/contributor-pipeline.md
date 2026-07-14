@@ -104,7 +104,7 @@ Rollback is deliberately data-preserving: disable the new routes, archive public
 - `GET /api/library`: paginated public pack search/detail and direct `.fydorpack` download from Storage
 - `GET /api/client-config`: non-secret browser configuration and chatbot allowlist
 
-Requests have payload limits, structured errors, HttpOnly cookie authentication, server authorization, fixed-window production rate limits, optimistic concurrency, and idempotency on submission/transitions. Authenticated mutations require same-origin request signals and use `SameSite=Strict` cookies for CSRF resistance.
+Requests have payload limits, structured errors, Supabase browser authentication, server-side bearer-token validation, fixed-window production rate limits, optimistic concurrency, and idempotency on submission/transitions. Authenticated mutations require same-origin request signals and a valid Supabase access token.
 
 ## User interfaces
 

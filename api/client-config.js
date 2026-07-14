@@ -10,6 +10,11 @@ module.exports = function handler(request, response) {
     requireMethod(request, ["GET"]);
     const config = assertServerConfig();
     response.setHeader("Cache-Control", "public, max-age=300");
-    send(response, 200, { webOrigin: config.origin, providerUrls: PROVIDER_URLS });
+    send(response, 200, {
+      webOrigin: config.origin,
+      providerUrls: PROVIDER_URLS,
+      supabaseUrl: config.supabase,
+      supabasePublishableKey: config.supabasePublishableKey
+    });
   } catch (error) { sendError(response, error); }
 };

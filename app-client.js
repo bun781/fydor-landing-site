@@ -1,39 +1,55 @@
-"use strict";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 let configPromise;
+let supabasePromise;
 let authPending = false;
 
 export function getConfig() {
-  configPromise ||= fetch("/api/client-config", { headers: { Accept: "application/json" }, credentials: "same-origin" }).then(expectJson);
+  configPromise ||= fetch("/api/client-config", { headers: { Accept: "application/json" }, cache: "no-store" }).then(expectJson);
   return configPromise;
 }
 
+export async function getSupabase() {
+  if (!supabasePromise) {
+    const config = await getConfig();
+    if (!config.supabaseUrl || !config.supabasePublishableKey) throw new Error("Supabase is not configured.");
+    supabasePromise = createClient(config.supabaseUrl, config.supabasePublishableKey, {
+      auth: { autoRefreshToken: true, detectSessionInUrl: true, persistSession: true }
+    });
+  }
+  return supabasePromise;
+}
+
 export async function signIn(email, password) {
-  const result = await authRequest({ action: "sign_in", email, password });
-  return result.user;
+  const { data, error } = await (await getSupabase()).auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  return data.user;
 }
 
 export async function signUp(email, password, username) {
-  const result = await authRequest({ action: "sign_up", email, password, username });
-  return result.user || null;
+  const { data, error } = await (await getSupabase()).auth.signUp({ email, password, options: { data: { username } } });
+  if (error) throw error;
+  return data.session?.user || null;
 }
 
 export async function signOut() {
-  await authRequest({ action: "sign_out" });
+  const { error } = await (await getSupabase()).auth.signOut();
+  if (error) throw error;
 }
 
 export async function getSession() {
-  const response = await fetch("/api/auth", { headers: { Accept: "application/json" }, credentials: "same-origin", cache: "no-store" });
-  const result = await expectJson(response);
-  return result.authenticated ? result.user : null;
+  const { data, error } = await (await getSupabase()).auth.getUser();
+  if (error && error.name !== "AuthSessionMissingError") throw error;
+  return data.user || null;
 }
 
 export async function api(path, options = {}) {
+  const { data: { session } } = await (await getSupabase()).auth.getSession();
+  if (!session?.access_token) throw new Error("Sign in is required.");
   const response = await fetch(path, {
     method: options.method || "GET",
-    headers: { Accept: "application/json", "Content-Type": "application/json", ...(options.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey } : {}) },
+    headers: { Accept: "application/json", "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}`, ...(options.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey } : {}) },
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
-    credentials: "same-origin",
     cache: "no-store"
   });
   return expectJson(response);
@@ -124,17 +140,6 @@ export function setupAuth(onSignedIn) {
     catch (error) { if (status) status.textContent = errorMessage(error, "Unable to sign out."); }
     finally { authPending = false; signout.disabled = false; }
   });
-}
-
-async function authRequest(body) {
-  const response = await fetch("/api/auth", {
-    method: "POST",
-    headers: { Accept: "application/json", "Content-Type": "application/json" },
-    credentials: "same-origin",
-    body: JSON.stringify(body),
-    cache: "no-store"
-  });
-  return expectJson(response);
 }
 
 function setAuthPending(form, pending) {

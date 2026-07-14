@@ -4,34 +4,21 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
-const { clearSessionCookies, parseCookies, setSessionCookies } = require("../lib/auth");
+const { accessToken } = require("../lib/auth");
 
-function response() {
-  return { headers: {}, setHeader(name, value) { this.headers[name] = value; } };
-}
-
-test("session cookies are HttpOnly, strict, and secure outside localhost", () => {
-  const result = response();
-  setSessionCookies(result, { access_token: "access.token", refresh_token: "refresh/token" }, { headers: { host: "fydor.vercel.app" } });
-  assert.equal(result.headers["Set-Cookie"].length, 2);
-  for (const cookie of result.headers["Set-Cookie"]) {
-    assert.match(cookie, /HttpOnly/);
-    assert.match(cookie, /SameSite=Strict/);
-    assert.match(cookie, /Secure/);
-  }
-  assert.equal(parseCookies("fydor_session=access.token; fydor_refresh=refresh%2Ftoken").fydor_refresh, "refresh/token");
+test("protected APIs only accept a Supabase bearer token", () => {
+  assert.equal(accessToken({ headers: { authorization: "Bearer access.token" } }), "access.token");
+  assert.equal(accessToken({ headers: { authorization: "bearer  access.token " } }), "access.token");
+  assert.equal(accessToken({ headers: { authorization: "Basic credentials" } }), null);
+  assert.equal(accessToken({ headers: {} }), null);
 });
 
-test("signing out expires both session cookies", () => {
-  const result = response();
-  clearSessionCookies(result, { headers: { host: "fydor.vercel.app" } });
-  assert.equal(result.headers["Set-Cookie"].length, 2);
-  assert.ok(result.headers["Set-Cookie"].every((cookie) => cookie.includes("Max-Age=0")));
-});
-
-test("contributor auth cannot fall back to a credential-bearing GET", () => {
+test("contributor auth has no credential-bearing GET fallback or cookie proxy", () => {
   const form = readFileSync(join(__dirname, "..", "contribute.html"), "utf8");
+  const client = readFileSync(join(__dirname, "..", "app-client.js"), "utf8");
   const build = readFileSync(join(__dirname, "..", "scripts", "build-static.js"), "utf8");
   assert.match(form, /<form class="entry-auth-form" data-auth-form method="post">/);
+  assert.match(client, /createClient\(/);
+  assert.doesNotMatch(client, /\/api\/auth/);
   assert.match(build, /"pack-preview\.js"/);
 });
