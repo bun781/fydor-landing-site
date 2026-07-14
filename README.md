@@ -23,24 +23,19 @@ Replace those paths with real release URLs when installers are available.
 
 ## Global Download Counter
 
-The live download count is served by `api/download-count.js` and needs a Redis-compatible Vercel KV or Upstash REST database. Set these environment variables in Vercel:
-
-- `KV_REST_API_URL`
-- `KV_REST_API_TOKEN`
-
-The API also accepts Upstash's native `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` names.
+The live download count is served by `api/download-count.js` and stored in
+Supabase through the server-only credential. Apply migration
+`004_native_rate_limits.sql` before deploying it.
 
 ## Contributor pipeline
 
-The contributor, moderation, administration, and public-library implementation is documented in `docs/contributor-pipeline.md`. The two-method pack contribution workflow, canonical hash rules, duplicate behavior, and migration steps are in `docs/contribution-pack-workflow.md`. Apply migrations `001_contributor_pipeline.sql`, `002_usernames.sql`, and `003_pack_contribution_workflow.sql` before enabling those routes.
+The contributor, moderation, administration, and public-library implementation is documented in `docs/contributor-pipeline.md`. The two-method pack contribution workflow, canonical hash rules, duplicate behavior, and migration steps are in `docs/contribution-pack-workflow.md`. Apply migrations `001_contributor_pipeline.sql` through `004_native_rate_limits.sql` before enabling those routes.
 
 Drizzle ORM configuration lives in `drizzle.config.ts` and
 `drizzle/schema.ts` for migration tooling. `GET /api/library` reads published
 `.fydorpack` files directly from the Supabase Storage `packs` bucket; it does
-not require `DATABASE_URL`. The public-library read path treats Redis/KV rate
-limiting as optional, so a Redis outage cannot make published lessons
-unavailable. Redis remains required in production for rate-limited writes and
-privileged workspace actions.
+not require `DATABASE_URL`. Rate limits and the download counter use Supabase,
+so no additional data-service account is required.
 
 ## Pack Publishing
 

@@ -49,15 +49,14 @@ test("missing Storage configuration returns a safe, named configuration error", 
   assert.deepEqual(result.body.error, { code: "configuration_error", message: "SUPABASE_URL is required." });
 });
 
-test("an unavailable optional rate limiter does not disable public reads", async () => {
+test("an unavailable optional Supabase rate limiter does not disable public reads", async () => {
   await rateLimit("public:test", 1, 60, {
     required: false,
-    env: { VERCEL_ENV: "production" },
-    fetch: async () => { throw new Error("should not be called without Redis configuration"); }
+    rpc: async () => { throw new Error("Supabase is unavailable"); }
   });
   const handler = createLibraryHandler({
     listPackObjects: async () => [], readPackObject: async () => "",
-    rateLimit: (...args) => rateLimit(...args, { required: false, env: { VERCEL_ENV: "production" } }),
+    rateLimit: (...args) => rateLimit(...args, { required: false, rpc: async () => { throw new Error("Supabase is unavailable"); } }),
     logger: logger()
   });
   const result = response();

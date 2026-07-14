@@ -14,10 +14,6 @@ Required server environment variables:
   `GET /api/library`. The public library reads validated `.fydorpack` files
   directly from the public `packs` Storage bucket using the server-only
   Supabase credential.
-- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`: required in
-  production for rate-limited writes and privileged workspace actions. Public
-  library reads fail open if this optional protection is unavailable, with a
-  structured server warning so Redis configuration can still be repaired.
 
 The Vercel functions are Node.js functions (not Edge functions). This is
 required by the `postgres` database driver used by the library endpoint.
@@ -73,8 +69,10 @@ Submission uses a transaction and idempotency key. It rechecks draft ownership, 
 `migrations/001_contributor_pipeline.sql` creates the base contributor and
 moderation model. `migrations/002_usernames.sql` adds username support and
 `migrations/003_pack_contribution_workflow.sql` adds the shared pack hash,
-creation-method, duplicate-warning, and publication-hash extensions. Apply all
-three through the normal Supabase migration runner in a test project first.
+creation-method, duplicate-warning, and publication-hash extensions.
+`migrations/004_native_rate_limits.sql` adds Supabase-native fixed-window rate
+limits and the download counter. Apply all four through the normal Supabase
+migration runner in a test project first.
 
 The base migration creates:
 
