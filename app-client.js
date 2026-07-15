@@ -120,16 +120,13 @@ export function setupAuth(onSignedIn) {
     if (status) status.textContent = "Creating account…";
     setAuthPending(form, true);
     try {
-      const user = await signUp(String(data.get("email")), String(data.get("password")), String(data.get("username")));
-      if (!user) {
-        if (status) status.textContent = "Account created. Check your email, then sign in.";
-        return;
-      }
-      if (status) status.textContent = `Signed in as ${user.email}.`;
-      await showSignedIn(user);
-    } catch (error) {
-      if (status) status.textContent = errorMessage(error);
-    } finally { setAuthPending(form, false); }
+      await signUp(String(data.get("email")), String(data.get("password")), String(data.get("username")));
+    } catch {
+      // Use the same response for an existing address and a failed sign-up.
+    } finally {
+      if (status) status.textContent = "You can now try signing in.";
+      setAuthPending(form, false);
+    }
   });
 
   signout?.addEventListener("click", async () => {
