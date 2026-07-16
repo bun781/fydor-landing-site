@@ -3,4 +3,5 @@
 ADMIN_BOOTSTRAP.local.md
 node_modules/
 coverage/
-public/
+/.next/
+*.tsbuildinfo

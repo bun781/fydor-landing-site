@@ -40,7 +40,7 @@ test("pack contributions have one globally unique active hash registry and publi
 });
 
 test("admin pack deletion archives the publication before deleting its public object", () => {
-  const admin = readFileSync(join(__dirname, "..", "api", "admin.js"), "utf8");
+  const admin = readFileSync(join(__dirname, "..", "legacy-api", "admin.js"), "utf8");
   assert.match(admin, /body\.action === "delete_pack"/);
   assert.match(admin, /p_next: "archived"/);
   assert.match(admin, /await deletePackObject\(path\)/);

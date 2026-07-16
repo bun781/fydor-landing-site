@@ -4,7 +4,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
-const { createLibraryHandler, packId } = require("../api/library");
+const { createLibraryHandler, packId } = require("../legacy-api/library");
 const { rateLimit } = require("../lib/rate-limit");
 const { safeServerError } = require("../lib/http");
 

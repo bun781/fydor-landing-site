@@ -1,16 +1,18 @@
 # Fydor Website
 
-Standalone static website for introducing Fydor and linking Windows/macOS downloads.
+Vercel-hosted Next.js App Router website for Fydor, including the public
+Exchange and contributor workflow.
 
 ## Local Preview
 
-Open `index.html` directly in a browser, or run a simple static server:
+Install dependencies, then run the App Router development server:
 
 ```sh
-python3 -m http.server 8080
+npm install
+npm run dev
 ```
 
-Then visit `http://localhost:8080`.
+Then visit `http://localhost:3000`.
 
 ## Download Links
 
@@ -23,13 +25,13 @@ Replace those paths with real release URLs when installers are available.
 
 ## Global Download Counter
 
-The live download count is served by `api/download-count.js` and stored in
+The live download count is served by `/api/download-count` and stored in
 Supabase through the server-only credential. Apply migration
 `004_native_rate_limits.sql` before deploying it.
 
 ## Contributor pipeline
 
-The contributor, moderation, administration, and public-library implementation is documented in `docs/contributor-pipeline.md`. The two-method pack contribution workflow, canonical hash rules, duplicate behavior, and migration steps are in `docs/contribution-pack-workflow.md`. Apply migrations `001_contributor_pipeline.sql` through `004_native_rate_limits.sql` before enabling those routes.
+The contributor, moderation, administration, and public-library implementation is documented in `docs/contributor-pipeline.md`. The current route, Supabase SSR, RLS, and Vercel design is in `docs/architecture.md`. Apply migrations `001_contributor_pipeline.sql` through `005_rls_hardening.sql` before enabling protected routes.
 
 Drizzle ORM configuration lives in `drizzle.config.ts` and
 `drizzle/schema.ts` for migration tooling. `GET /api/library` reads published

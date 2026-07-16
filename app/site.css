@@ -1,0 +1,2 @@
+:root { color-scheme: light; font-family: Inter, system-ui, sans-serif; color: #312d29; background: #f7f4ed; }
+body { margin: 0; } main { max-width: 920px; margin: 0 auto; padding: 4rem 1.5rem; } nav { display:flex; gap:1rem; margin-bottom:4rem; } a { color:#8a4f2b; } h1 { font: 700 clamp(2.4rem, 7vw, 5rem)/1.05 Georgia, serif; } .button { display:inline-block; background:#8a4f2b; color:white; padding:.75rem 1rem; border-radius:.4rem; text-decoration:none; border:0; } form { display:grid; gap:.75rem; max-width:28rem; } input { padding:.65rem; } .notice { color:#6b625b; }

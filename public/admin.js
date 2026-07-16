@@ -1,6 +1,7 @@
-import { api, getSession } from "./app-client.js";
+import { api } from "./app-client.js";
 
 const panel = document.querySelector("[data-admin]");
+const loading = document.querySelector("[data-admin-loading]");
 const usersTable = document.querySelector("[data-users]");
 const packsTable = document.querySelector("[data-packs]");
 const status = document.querySelector("[data-admin-status]");
@@ -12,12 +13,31 @@ document.querySelector("[data-refresh-packs]").addEventListener("click", loadPac
 
 async function initialize() {
   if (sessionStorage.getItem("fydor-admin-entry") !== "contribute") return redirectToContribution();
+  loading.hidden = false;
+  status.className = "";
+  status.textContent = "Checking administration access…";
   try {
-    if (!await getSession()) return redirectToContribution();
     currentRoles = (await api("/api/admin?action=me")).roles;
     panel.hidden = false;
+    loading.hidden = true;
     await Promise.all([search(), loadPacks()]);
-  } catch { redirectToContribution(); }
+  } catch (error) {
+    panel.hidden = true;
+    status.textContent = `Couldn't verify administration access. ${error.message || "Try again."}`;
+    status.className = "workspace-error";
+    showRetry();
+  }
+}
+
+function showRetry() {
+  if (loading.querySelector("[data-admin-retry]")) return;
+  const retry = document.createElement("button");
+  retry.type = "button";
+  retry.className = "button secondary";
+  retry.dataset.adminRetry = "";
+  retry.textContent = "Try again";
+  retry.addEventListener("click", initialize);
+  loading.append(retry);
 }
 
 function redirectToContribution() {
