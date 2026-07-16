@@ -3,6 +3,10 @@ import { DownloadLink } from "@/components/download-link";
 import { FrontpageScreenshotCarousel } from "@/components/frontpage-screenshot-carousel";
 import { SiteFooter, SiteNav } from "@/components/site-nav";
 
+const desktopRelease = "v4.1.0";
+const windowsDownload = "/downloads/fydor-windows-v4.1.0.exe";
+const macDownload = "/downloads/fydor-mac-v4.1.0.dmg";
+
 const WindowsIcon = () => (
   <svg className="platform-icon" viewBox="0 0 24 24" aria-hidden="true">
     <path d="M3 4.5 11 3v8H3V4.5Zm0 7.5h8v8l-8-1.5V12Zm9-8.2L21 2v9h-9V3.8Zm0 9.2h9v9l-9-1.5V13Z" />
@@ -29,10 +33,10 @@ export default function Home() {
               and reviewing what matters with calm spaced repetition.
             </p>
             <div className="hero-actions" id="download">
-              <DownloadLink className="button" file="/downloads/fydor-windows.exe">
+              <DownloadLink className="button" file={windowsDownload}>
                 <WindowsIcon /> Download for Windows
               </DownloadLink>
-              <DownloadLink className="button secondary" file="/downloads/fydor-mac.dmg">
+              <DownloadLink className="button secondary" file={macDownload}>
                 <AppleIcon /> Download for Mac
               </DownloadLink>
             </div>
@@ -41,7 +45,7 @@ export default function Home() {
               <Link href="/install?platform=mac">Open Mac install help</Link>
             </div>
             <p className="muted release-note">
-              Fresh desktop builds are published here for Windows and macOS. Your lessons and review
+              {desktopRelease} is the current desktop release for Windows and macOS. Your lessons and review
               history stay on your device.
             </p>
             <Link className="text-link" href="/library">Browse the Exchange <span aria-hidden="true">→</span></Link>
@@ -66,13 +70,13 @@ export default function Home() {
               <span className="pill platform-pill"><WindowsIcon /> Windows</span>
               <strong>Fydor for Windows</strong>
               <span>Install the current desktop release and keep your study library local.</span>
-              <div className="download-card-actions"><DownloadLink className="button" file="/downloads/fydor-windows.exe">Download</DownloadLink><Link className="text-link" href="/install?platform=windows">Open after download</Link></div>
+              <div className="download-card-actions"><DownloadLink className="button" file={windowsDownload}>Download {desktopRelease}</DownloadLink><Link className="text-link" href="/install?platform=windows">Open after download</Link></div>
             </article>
             <article className="download-card">
               <span className="pill platform-pill"><AppleIcon /> macOS</span>
               <strong>Fydor for Mac</strong>
               <span>Open the disk image, then drag Fydor into Applications.</span>
-              <div className="download-card-actions"><DownloadLink className="button" file="/downloads/fydor-mac.dmg">Download</DownloadLink><Link className="text-link" href="/install?platform=mac">Open after download</Link></div>
+              <div className="download-card-actions"><DownloadLink className="button" file={macDownload}>Download {desktopRelease}</DownloadLink><Link className="text-link" href="/install?platform=mac">Open after download</Link></div>
             </article>
           </div>
         </section>

@@ -5,7 +5,7 @@ import { type ReactNode } from "react";
 type DownloadLinkProps = {
   children: ReactNode;
   className?: string;
-  file: "/downloads/fydor-mac.dmg" | "/downloads/fydor-windows.exe";
+  file: string;
 };
 
 export function DownloadLink({ children, className, file }: DownloadLinkProps) {
