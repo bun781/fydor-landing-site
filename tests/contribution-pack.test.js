@@ -2,7 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { computePackContentHash, detectNearDuplicates, parseAndValidatePack } = require("../lib/pack-schema");
+const { computePackContentHash, detectNearDuplicates, parseAndValidateDraftPack, parseAndValidatePack } = require("../lib/pack-schema");
 
 function pack(overrides = {}) {
   return {
@@ -36,7 +36,7 @@ test("accepts legacy packs with repeated annotation surfaces", () => {
   assert.equal(result.pack.lessons[0].sentences[0].grammar.length, 3);
 });
 
-test("compacts exact duplicate annotations in normalized packs", () => {
+test("flags exact duplicate annotations before submission", () => {
   const source = pack({ lessons: [{ language: "ko", baseLanguage: "en", title: "Lesson", sentences: [
     { text: "안녕하세요.", translation: "Hello.", words: [
       { surface: "안녕하세요", meaning: "hello" },
@@ -44,9 +44,14 @@ test("compacts exact duplicate annotations in normalized packs", () => {
     ] }
   ] }] });
 
-  const result = parseAndValidatePack(JSON.stringify(source));
+  assert.throws(() => parseAndValidatePack(JSON.stringify(source)), /duplicates another annotation/);
+});
 
-  assert.deepEqual(result.pack.lessons[0].sentences[0].words, [{ surface: "안녕하세요", meaning: "hello" }]);
+test("allows incomplete but structurally safe contributor drafts", () => {
+  const source = pack({ title: "", lessons: [{ language: "ko", baseLanguage: "en", title: "", sentences: [{ text: "", translation: "", words: [{ surface: "", meaning: "" }] }] }] });
+  const result = parseAndValidateDraftPack(source);
+  assert.equal(result.pack.title, "");
+  assert.throws(() => parseAndValidatePack(source), /cannot be empty|is required/);
 });
 
 test("canonical content hash ignores metadata and object key order but preserves sentence order and text", () => {

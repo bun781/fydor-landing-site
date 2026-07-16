@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 
+const INITIAL_ADMIN_EMAIL = "minhnhannguyen28@gmail.com";
 const args = parseArgs(process.argv.slice(2));
-if (!args.email || !/^\S+@\S+\.\S+$/.test(args.email)) fail("Pass a valid email with --email.");
-const supabaseUrl = requiredEnv("SUPABASE_URL").replace(/\/+$/, "");
+args.email ||= INITIAL_ADMIN_EMAIL;
+if (!/^\S+@\S+\.\S+$/.test(args.email) || args.email.toLowerCase() !== INITIAL_ADMIN_EMAIL) fail(`The protected bootstrap account must be ${INITIAL_ADMIN_EMAIL}.`);
+const supabaseUrl = (process.env.SUPABASE_URL || requiredEnv("NEXT_PUBLIC_SUPABASE_URL")).replace(/\/+$/, "");
 const serviceKey = process.env.SUPABASE_SECRET_KEY || requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
 if (args.create) await createVerifiedUser(supabaseUrl, serviceKey, args.email, requiredEnv("ADMIN_BOOTSTRAP_PASSWORD"), args.username);
 const action = args.verify ? "super_admin_status" : args.revoke ? "revoke_super_admin" : "bootstrap_super_admin";

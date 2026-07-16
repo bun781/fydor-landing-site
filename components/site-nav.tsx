@@ -11,6 +11,7 @@ export function SiteNav({ home = false }: { home?: boolean }) {
         {home && <a href="#download">Download</a>}
         <Link href="/library">Exchange</Link>
         <Link href="/contribute">Contribute</Link>
+        <Link href="/admin">Admin</Link>
         {home && <a href="#features">Features</a>}
         <Link href="/about">About</Link>
         <Link className="nav-account" href="/login">Sign in</Link>

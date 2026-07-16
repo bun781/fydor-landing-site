@@ -78,8 +78,11 @@ creation-method, duplicate-warning, and publication-hash extensions.
 `migrations/004_native_rate_limits.sql` adds Supabase-native fixed-window rate
 limits and the download counter, `005_rls_hardening.sql` closes direct Data API
 access, and `006_auth_profile_sync.sql` mirrors API-safe Auth user fields into
-`public.profiles` while backfilling existing accounts. Apply all six through the
-normal Supabase migration runner in a test project first.
+`public.profiles` while backfilling existing accounts. Migration 007 completes
+the protected administration and moderation surface; migration 008 makes every
+sentence approval revision-aware and resets approvals after content changes.
+Apply all eight through the normal Supabase migration runner in a test project
+first.
 
 The base migration creates:
 

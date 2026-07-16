@@ -21,7 +21,10 @@ module.exports = async function handler(request, response) {
       if (action === "users") {
         const query = String(request.query?.q || "").normalize("NFC").trim().slice(0, 120).replace(/[,*()]/g, "");
         const filter = query ? `&or=(email.ilike.*${encodeURIComponent(query)}*,display_name.ilike.*${encodeURIComponent(query)}*)` : "";
-        const rows = await db(`profiles?select=id,email,display_name,active,verified_at,created_at,user_roles(version,suspended_at,expires_at,roles(name))${filter}&order=created_at.desc&limit=100`);
+        const rows = await db(`profiles?select=id,email,display_name,active,verified_at,publishing_suspended_at,created_at,user_roles(version,suspended_at,expires_at,roles(name))${filter}&order=created_at.desc&limit=100`);
+        const protectedRows = await db("protected_administrators?select=user_id");
+        const protectedIds = new Set(protectedRows.map((row) => row.user_id));
+        for (const row of rows) row.protected_administrator = protectedIds.has(row.id);
         return send(response, 200, { users: rows });
       }
       if (action === "moderators") {
@@ -33,9 +36,9 @@ module.exports = async function handler(request, response) {
         return send(response, 200, { packs: rows });
       }
       if (action === "permissions") {
-        requireRole(actor, ["super_admin"]);
-        const rows = await db("permission_events?select=*&order=created_at.desc&limit=200");
-        return send(response, 200, { events: rows });
+        const rows = await db("permission_events?select=*&order=created_at.desc&limit=300");
+        const profiles = await profilesById(rows.flatMap((row) => [row.actor_id, row.target_user_id]));
+        return send(response, 200, { events: rows.map((row) => ({ ...row, actor: profiles.get(row.actor_id) || null, target: profiles.get(row.target_user_id) || null })) });
       }
       throw httpError(400, "invalid_action", "Unsupported administration query.");
     }
@@ -56,6 +59,20 @@ module.exports = async function handler(request, response) {
         p_reason: requiredReason(body.reason)
       });
       return send(response, 200, { administrator: result });
+    }
+    if (body.action === "set_contributor") {
+      const result = await rpc("set_contributor", {
+        p_actor: actor.id, p_target: uuid(body.userId), p_enabled: body.enabled === true,
+        p_reason: requiredReason(body.reason)
+      });
+      return send(response, 200, { contributor: result });
+    }
+    if (body.action === "suspend_publishing") {
+      const result = await rpc("set_publishing_suspension", {
+        p_actor: actor.id, p_target: uuid(body.userId), p_suspended: body.suspended === true,
+        p_reason: requiredReason(body.reason)
+      });
+      return send(response, 200, { publishing: result });
     }
     if (body.action === "delete_pack") {
       const pack = await archiveAndDeletePack(actor, body);
@@ -91,3 +108,4 @@ async function archiveAndDeletePack(actor, body) {
 function uuid(value){const text=String(value||"");if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(text))throw httpError(400,"invalid_id","Invalid identifier.");return text;}
 function requiredReason(value){const text=String(value||"").normalize("NFC").trim();if(!text)throw httpError(400,"reason_required","A reason is required.");return text.slice(0,4000);}
 function segment(value) { return String(value || "").toLowerCase().trim().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "unknown"; }
+async function profilesById(ids) { const unique=[...new Set(ids.filter(Boolean))]; if(!unique.length)return new Map(); const rows=await db(`profiles?select=id,email,display_name&id=in.(${unique.join(",")})`); return new Map(rows.map((row)=>[row.id,row])); }

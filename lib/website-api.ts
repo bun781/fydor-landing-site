@@ -29,5 +29,16 @@ export async function readJson<T>(response: Response): Promise<T> {
   const data = await response.json().catch(() => ({}));
   if (response.ok) return data as T;
   const error = data.error ?? data;
-  throw new Error(String(error.message ?? error.error ?? `Request failed (${response.status}).`));
+  throw new WebsiteApiError(
+    String(error.message ?? error.error ?? `Request failed (${response.status}).`),
+    String(error.code ?? "request_failed"),
+    Array.isArray(error.issues) ? error.issues : Array.isArray(data.issues) ? data.issues : []
+  );
+}
+
+export class WebsiteApiError extends Error {
+  constructor(message: string, readonly code: string, readonly issues: Array<{ path: string; message: string }>) {
+    super(message);
+    this.name = "WebsiteApiError";
+  }
 }

@@ -25,8 +25,16 @@ export const profiles = pgTable("profiles", {
   displayName: text("display_name"),
   active: boolean("active").notNull().default(true),
   verifiedAt: timestamp("verified_at", { withTimezone: true }),
+  publishingSuspendedAt: timestamp("publishing_suspended_at", { withTimezone: true }),
   createdAt: createdAt(),
   updatedAt: updatedAt()
+});
+
+export const protectedAdministrators = pgTable("protected_administrators", {
+  userId: uuid("user_id").primaryKey().references(() => profiles.id, { onDelete: "restrict" }),
+  bootstrapEmail: text("bootstrap_email").notNull().unique(),
+  reason: text("reason").notNull(),
+  createdAt: createdAt()
 });
 
 export const roles = pgTable("roles", {
@@ -79,6 +87,7 @@ export const contributorDrafts = pgTable("contributor_drafts", {
   generationSource: text("generation_source").notNull().default("manual"),
   creationMethod: text("creation_method").notNull().default("ai"),
   possibleDuplicate: boolean("possible_duplicate").notNull().default(false),
+  contributorNote: text("contributor_note"),
   duplicateMatchSubmissionId: uuid("duplicate_match_submission_id"),
   duplicateSimilarity: text("duplicate_similarity"),
   duplicateReasons: jsonb("duplicate_reasons").notNull().default([]),
@@ -97,13 +106,15 @@ export const sentenceReviewProgress = pgTable("sentence_review_progress", {
   draftId: uuid("draft_id").notNull().references(() => contributorDrafts.id, { onDelete: "cascade" }),
   sentenceIndex: integer("sentence_index").notNull(),
   status: text("status").notNull(),
+  draftRevision: integer("draft_revision").notNull(),
   reviewerNote: text("reviewer_note"),
   reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
   updatedAt: updatedAt()
 }, (table) => [
   primaryKey({ columns: [table.draftId, table.sentenceIndex] }),
   check("sentence_review_index_check", sql`${table.sentenceIndex} >= 0`),
-  check("sentence_review_status_check", sql`${table.status} in ('unreviewed','reviewed','needs_work')`)
+  check("sentence_review_status_check", sql`${table.status} in ('unreviewed','approved','needs_changes')`),
+  index("sentence_review_revision_idx").on(table.draftId, table.draftRevision, table.status)
 ]);
 
 export const submissions = pgTable("submissions", {
@@ -116,6 +127,7 @@ export const submissions = pgTable("submissions", {
   state: text("state").notNull(),
   currentVersion: integer("current_version").notNull(),
   rowVersion: integer("row_version").notNull().default(1),
+  archivedFromState: text("archived_from_state"),
   createdAt: createdAt(),
   updatedAt: updatedAt()
 }, (table) => [
@@ -133,6 +145,7 @@ export const submissionVersions = pgTable("submission_versions", {
   generationSource: text("generation_source").notNull(),
   creationMethod: text("creation_method").notNull().default("ai"),
   possibleDuplicate: boolean("possible_duplicate").notNull().default(false),
+  contributorNote: text("contributor_note"),
   duplicateMatchSubmissionId: uuid("duplicate_match_submission_id"),
   duplicateSimilarity: text("duplicate_similarity"),
   duplicateReasons: jsonb("duplicate_reasons").notNull().default([]),
@@ -166,6 +179,10 @@ export const reviewerFeedback = pgTable("reviewer_feedback", {
   submissionVersion: integer("submission_version").notNull(),
   authorId: uuid("author_id").notNull().references(() => profiles.id, { onDelete: "restrict" }),
   sentenceIndex: integer("sentence_index"),
+  lessonIndex: integer("lesson_index"),
+  targetType: text("target_type").notNull().default("sentence"),
+  targetPath: text("target_path"),
+  visibility: text("visibility").notNull().default("contributor"),
   category: text("category").notNull(),
   body: text("body").notNull(),
   suggestedPatch: jsonb("suggested_patch"),
