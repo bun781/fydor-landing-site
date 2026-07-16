@@ -1,11 +1,10 @@
 "use client";
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { createClient } from "@/lib/supabase/browser";
 export function AuthForm({ mode }: { mode: "login" | "signup" | "forgot" | "reset" }) {
-  const router = useRouter(); const [message, setMessage] = useState(""); const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState(""); const [busy, setBusy] = useState(false);
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     void submit(new FormData(event.currentTarget));
@@ -22,13 +21,14 @@ export function AuthForm({ mode }: { mode: "login" | "signup" | "forgot" | "rese
     try {
       const supabase = createClient();
       if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) setMessage(error.message);
-        else { router.replace("/contribute"); router.refresh(); }
+        else if (data.session) window.location.assign("/contribute");
+        else setMessage("Sign-in completed without a session. Please try again.");
       } else if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${location.origin}/auth/callback?next=/contribute` } });
         if (error) setMessage(error.message);
-        else if (data.session) { router.replace("/contribute"); router.refresh(); }
+        else if (data.session) window.location.assign("/contribute");
         else setMessage("Check your email to confirm your account.");
       } else if (mode === "forgot") {
         const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${location.origin}/auth/callback?next=/reset-password` });
