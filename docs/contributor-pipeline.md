@@ -10,7 +10,7 @@ only static downloads and images.
 
 Required server environment variables:
 
-- `NEXT_PUBLIC_SITE_URL`: canonical website origin. HTTPS is mandatory except on localhost. Vercel preview deployments fall back to their trusted `VERCEL_URL` for compatibility handlers.
+- `NEXT_PUBLIC_SITE_URL`: canonical website origin. HTTPS is mandatory. Vercel preview deployments fall back to their trusted `VERCEL_URL` for compatibility handlers.
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY` (server only)

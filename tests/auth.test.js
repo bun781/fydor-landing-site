@@ -17,6 +17,8 @@ test("Next.js auth pages use the canonical Supabase browser client", () => {
   const form = readFileSync(join(__dirname, "..", "app", "(auth)", "AuthForm.tsx"), "utf8");
   const client = readFileSync(join(__dirname, "..", "lib", "supabase", "browser.ts"), "utf8");
   assert.match(form, /createClient/);
+  assert.match(form, /Account services are unavailable/);
+  assert.match(form, /finally/);
   assert.match(client, /createBrowserClient/);
   assert.doesNotMatch(form, /\/api\/auth/);
 });

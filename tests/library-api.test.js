@@ -9,7 +9,7 @@ const { rateLimit } = require("../lib/rate-limit");
 const { safeServerError } = require("../lib/http");
 
 function request(query = {}) {
-  return { method: "GET", query, headers: {}, socket: { remoteAddress: "127.0.0.1" } };
+  return { method: "GET", query, headers: {}, socket: { remoteAddress: "192.0.2.1" } };
 }
 
 function response() {

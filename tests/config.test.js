@@ -4,10 +4,9 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { assertServerConfig, configuredWebOrigin, normalizeWebOrigin, providerUrl, webUrl } = require("../lib/config");
 
-test("normalizes safe production, preview, and localhost origins", () => {
+test("normalizes safe production and preview origins", () => {
   assert.equal(normalizeWebOrigin("https://fydor.example///"), "https://fydor.example");
   assert.equal(normalizeWebOrigin("https://preview-123.vercel.app/"), "https://preview-123.vercel.app");
-  assert.equal(normalizeWebOrigin("http://localhost:8080/"), "http://localhost:8080");
 });
 
 test("rejects unsafe website origins and paths", () => {
@@ -57,6 +56,6 @@ test("accepts the Next.js public Supabase and site variables for compatibility h
   assert.equal(result.supabaseSecretKey, "sb_secret_local");
 });
 
-test("production auth does not trust a localhost development origin", () => {
-  assert.equal(configuredWebOrigin({ VERCEL_ENV: "production", FYDOR_WEB_ORIGIN: "http://localhost:8080" }), "https://fydor.vercel.app");
+test("production auth defaults to the canonical website origin", () => {
+  assert.equal(configuredWebOrigin({ VERCEL_ENV: "production" }), "https://fydor.vercel.app");
 });

@@ -3,17 +3,6 @@
 Vercel-hosted Next.js App Router website for Fydor, including the public
 Exchange and contributor workflow.
 
-## Local Preview
-
-Install dependencies, then run the App Router development server:
-
-```sh
-npm install
-npm run dev
-```
-
-Then visit `http://localhost:3000`.
-
 ## Download Links
 
 The current buttons point to placeholder files:

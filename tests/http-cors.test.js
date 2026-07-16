@@ -16,8 +16,8 @@ function response() {
 }
 
 test("authenticated API CORS only allows the website origin", () => {
-  const previous = process.env.FYDOR_WEB_ORIGIN;
-  process.env.FYDOR_WEB_ORIGIN = "https://fydor.vercel.app";
+  const previous = process.env.NEXT_PUBLIC_SITE_URL;
+  process.env.NEXT_PUBLIC_SITE_URL = "https://fydor.vercel.app";
 
   try {
     const result = response();
@@ -25,21 +25,21 @@ test("authenticated API CORS only allows the website origin", () => {
     assert.equal(result.headers["Access-Control-Allow-Origin"], "https://fydor.vercel.app");
     assert.equal(result.headers["Access-Control-Allow-Headers"], "Authorization, Content-Type, Idempotency-Key");
   } finally {
-    if (previous === undefined) delete process.env.FYDOR_WEB_ORIGIN;
-    else process.env.FYDOR_WEB_ORIGIN = previous;
+    if (previous === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
+    else process.env.NEXT_PUBLIC_SITE_URL = previous;
   }
 });
 
 test("same-origin checks reject cross-site mutations", () => {
   const { requireSameOrigin } = require("../lib/http");
-  const previous = process.env.FYDOR_WEB_ORIGIN;
-  process.env.FYDOR_WEB_ORIGIN = "https://fydor.vercel.app";
+  const previous = process.env.NEXT_PUBLIC_SITE_URL;
+  process.env.NEXT_PUBLIC_SITE_URL = "https://fydor.vercel.app";
   try {
     assert.throws(() => requireSameOrigin({ headers: { origin: "https://evil.example" } }), /Cross-origin/);
     assert.doesNotThrow(() => requireSameOrigin({ headers: { origin: "https://fydor.vercel.app" } }));
   } finally {
-    if (previous === undefined) delete process.env.FYDOR_WEB_ORIGIN;
-    else process.env.FYDOR_WEB_ORIGIN = previous;
+    if (previous === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
+    else process.env.NEXT_PUBLIC_SITE_URL = previous;
   }
 });
 
