@@ -14,6 +14,13 @@ test("website workspaces are Next.js components rather than static HTML", () => 
   assert.doesNotMatch(source("vercel.json"), /https:\/\/esm\.sh/);
 });
 
+test("the base URL is implemented by an explicit App Router page", () => {
+  const home = source("app", "page.tsx");
+
+  assert.match(home, /export default function Home/);
+  assert.match(home, /Browse the Exchange/);
+});
+
 test("legacy redirects do not override App Router workspaces and admin route keeps a server gate", () => {
   const config = source("next.config.ts");
   const library = source("app", "(public)", "library", "page.tsx");
