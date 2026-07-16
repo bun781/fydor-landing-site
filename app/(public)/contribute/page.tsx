@@ -1,4 +1,4 @@
 import { ContributeWorkspace } from "@/components/contribute-workspace";
-import { SiteNav } from "@/components/site-nav";
+import { SiteFooter, SiteNav } from "@/components/site-nav";
 
-export default function Contribute() { return <><SiteNav /><main><ContributeWorkspace /></main></>; }
+export default function Contribute() { return <><SiteNav /><main><ContributeWorkspace /></main><SiteFooter /></>; }
