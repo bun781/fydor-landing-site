@@ -53,7 +53,7 @@ export function PackEditor({ pack, issues, saving, onChange, onSave, onReview, o
     </aside>
     <div className="stack contributor-main">
       <section className="workspace-card compact-card">
-        <div className="workspace-header"><div><span className="eyebrow">Pack details</span><h1>{pack.title || "New lesson pack"}</h1></div><div className="workspace-actions"><button className="button secondary" onClick={onPreview}>Preview</button><button className="button secondary" onClick={onReview}>Review sentences</button><button className="button" disabled={saving} onClick={onSave}>{saving ? "Saving…" : "Save draft"}</button></div></div>
+        <div className="workspace-header"><div><span className="eyebrow">Pack details</span><h1>{pack.title || "New lesson pack"}</h1></div><div className="workspace-actions"><button className="button secondary" onClick={onPreview}>Preview</button><button className="button secondary" onClick={onReview}>Review & submit</button><button className="button" disabled={saving} onClick={onSave}>{saving ? "Saving…" : "Save draft"}</button></div></div>
         <div className="form-grid">
           <Field label="Pack title" value={pack.title} onChange={(title) => update({ ...pack, title })} />
           <Field label="Version" value={pack.version} onChange={(version) => update({ ...pack, version })} />

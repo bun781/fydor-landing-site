@@ -67,7 +67,7 @@ export function ContributeWorkspace() {
     setBusy(true);
     try {
       const result = await api<{ pack: Pack }>("/api/contributor", { method: "POST", body: { action: "validate_pack", pack: text } });
-      setDraft(null); setPack(result.pack); setReviews(new Map()); setDirty(true); setView("editor"); setMessage("Pack imported. Save it as your draft when ready.");
+      setDraft(null); setPack(result.pack); setReviews(new Map()); setDirty(true); setView("editor"); setMessage("Pack imported. Save it as a draft, then use Review & submit to send it for moderation.");
     } catch (error) { captureError(error, "Unable to import that pack."); }
     finally { setBusy(false); }
   }
