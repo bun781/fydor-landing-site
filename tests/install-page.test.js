@@ -15,9 +15,8 @@ test("install help offers both unsigned-platform flows", () => {
   assert.match(guide, /requestedPlatform\(\).*detectedPlatform/s);
 });
 
-test("website downloads redirect to the canonical GitHub Release assets", () => {
+test("website serves installers directly from local public assets", () => {
   const config = JSON.parse(readFileSync(join(__dirname, "..", "vercel.json"), "utf8"));
-  const destinations = config.redirects.map((redirect) => redirect.destination);
-  assert.ok(destinations.includes("https://github.com/bun781/Triolinga/releases/latest/download/fydor-mac.dmg"));
-  assert.ok(destinations.includes("https://github.com/bun781/Triolinga/releases/latest/download/fydor-windows.exe"));
+  assert.equal(config.redirects, undefined);
+  assert.match(readFileSync(join(__dirname, "..", "components", "download-link.tsx"), "utf8"), /\/install\?platform=/);
 });

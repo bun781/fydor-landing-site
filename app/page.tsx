@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DownloadLink } from "@/components/download-link";
 import { FrontpageScreenshotCarousel } from "@/components/frontpage-screenshot-carousel";
 import { SiteFooter, SiteNav } from "@/components/site-nav";
 
@@ -28,12 +29,12 @@ export default function Home() {
               and reviewing what matters with calm spaced repetition.
             </p>
             <div className="hero-actions" id="download">
-              <a className="button" href="/downloads/fydor-windows.exe">
+              <DownloadLink className="button" file="/downloads/fydor-windows.exe" platform="windows">
                 <WindowsIcon /> Download for Windows
-              </a>
-              <a className="button secondary" href="/downloads/fydor-mac.dmg">
+              </DownloadLink>
+              <DownloadLink className="button secondary" file="/downloads/fydor-mac.dmg" platform="mac">
                 <AppleIcon /> Download for Mac
-              </a>
+              </DownloadLink>
             </div>
             <div className="download-help-links" aria-label="Install help">
               <Link href="/install?platform=windows">Open Windows install help</Link>
@@ -65,13 +66,13 @@ export default function Home() {
               <span className="pill platform-pill"><WindowsIcon /> Windows</span>
               <strong>Fydor for Windows</strong>
               <span>Install the current desktop release and keep your study library local.</span>
-              <div className="download-card-actions"><a className="button" href="/downloads/fydor-windows.exe">Download</a><Link className="text-link" href="/install?platform=windows">Open after download</Link></div>
+              <div className="download-card-actions"><DownloadLink className="button" file="/downloads/fydor-windows.exe" platform="windows">Download</DownloadLink><Link className="text-link" href="/install?platform=windows">Open after download</Link></div>
             </article>
             <article className="download-card">
               <span className="pill platform-pill"><AppleIcon /> macOS</span>
               <strong>Fydor for Mac</strong>
               <span>Open the disk image, then drag Fydor into Applications.</span>
-              <div className="download-card-actions"><a className="button" href="/downloads/fydor-mac.dmg">Download</a><Link className="text-link" href="/install?platform=mac">Open after download</Link></div>
+              <div className="download-card-actions"><DownloadLink className="button" file="/downloads/fydor-mac.dmg" platform="mac">Download</DownloadLink><Link className="text-link" href="/install?platform=mac">Open after download</Link></div>
             </article>
           </div>
         </section>

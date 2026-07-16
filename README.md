@@ -7,10 +7,11 @@ Exchange and contributor workflow.
 
 The current buttons point to placeholder files:
 
-- `downloads/fydor-windows.exe`
-- `downloads/fydor-mac.dmg`
+- `public/downloads/fydor-windows.exe`
+- `public/downloads/fydor-mac.dmg`
 
-Replace those paths with real release URLs when installers are available.
+These files are served directly at `/downloads/fydor-windows.exe` and
+`/downloads/fydor-mac.dmg`.
 
 ## Global Download Counter
 

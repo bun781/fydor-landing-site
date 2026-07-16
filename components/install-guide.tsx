@@ -57,7 +57,7 @@ export function InstallGuide() {
             <li>On the SmartScreen window, choose <strong>More info</strong>.</li>
             <li>Confirm the app name is Fydor, then choose <strong>Run anyway</strong> to continue installation.</li>
           </ol>
-          <p className="muted">Only continue if you downloaded Fydor from this website or the official Fydor GitHub Release.</p>
+          <p className="muted">Only continue if you downloaded Fydor from this website.</p>
         </>
       )}
     </section>
