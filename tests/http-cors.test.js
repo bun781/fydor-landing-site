@@ -36,6 +36,7 @@ test("same-origin checks reject cross-site mutations", () => {
   process.env.NEXT_PUBLIC_SITE_URL = "https://fydor.vercel.app";
   try {
     assert.throws(() => requireSameOrigin({ headers: { origin: "https://evil.example" } }), /Cross-origin/);
+    assert.throws(() => requireSameOrigin({ headers: {} }), /Cross-origin/);
     assert.doesNotThrow(() => requireSameOrigin({ headers: { origin: "https://fydor.vercel.app" } }));
   } finally {
     if (previous === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;

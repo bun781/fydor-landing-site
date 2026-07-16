@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 
 const screenshots = [
   { src: "/frontpage-previews/review.png", alt: "Fydor's sentence review workspace", label: "Review" },
+  { src: "/frontpage-previews/lesson-builder.png", alt: "Fydor's lesson builder workspace", label: "Lesson builder" },
   { src: "/frontpage-previews/reading.png", alt: "Fydor's lesson reading workspace", label: "Reading" },
   { src: "/frontpage-previews/study.png", alt: "Fydor's study mode workspace", label: "Study" },
-  { src: "/frontpage-previews/lesson-builder.png", alt: "Fydor's lesson builder workspace", label: "Lesson builder" },
 ];
 
 export function FrontpageScreenshotCarousel() {

@@ -1,5 +1,6 @@
 import { Readable } from "node:stream";
 import { createRequire } from "node:module";
+import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export const runtime = "nodejs";
@@ -27,11 +28,26 @@ async function handle(request: NextRequest, context: { params: Promise<{ endpoin
   const text = request.method === "GET" || request.method === "HEAD" ? "" : await request.text();
   const query = Object.fromEntries(request.nextUrl.searchParams.entries());
   const headers = Object.fromEntries([...request.headers].map(([name, value]) => [name.toLowerCase(), value]));
+  if (!headers.authorization) {
+    const authorization = await sessionAuthorization(request);
+    if (authorization) headers.authorization = authorization;
+  }
   let body: unknown;
   try { body = text ? JSON.parse(text) : undefined; } catch { return NextResponse.json({ error: { code: "invalid_json", message: "Request body must be valid JSON." } }, { status: 400 }); }
   const legacy = Object.assign(Readable.from(text ? [Buffer.from(text)] : []), { method: request.method, headers, query, body, socket: { remoteAddress: headers["x-forwarded-for"] } }) as LegacyRequest;
   const response = new LegacyResponse();
   try { await handler(legacy, response); } catch { return NextResponse.json({ error: { code: "internal_error", message: "The request could not be completed." } }, { status: 500 }); }
   return new NextResponse(response.body, { status: response.statusCode, headers: response.headers });
+}
+
+async function sessionAuthorization(request: NextRequest) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) return null;
+  const supabase = createServerClient(url, key, {
+    cookies: { getAll: () => request.cookies.getAll(), setAll: () => undefined }
+  });
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ? `Bearer ${session.access_token}` : null;
 }
 export const GET = handle; export const POST = handle; export const OPTIONS = handle;

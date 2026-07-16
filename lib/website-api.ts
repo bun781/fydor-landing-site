@@ -1,18 +1,11 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/browser";
-
 export async function api<T>(path: string, options: { method?: "GET" | "POST"; body?: unknown; idempotencyKey?: string } = {}): Promise<T> {
-  const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) throw new Error("Sign in is required.");
-
   const response = await fetch(path, {
     method: options.method ?? "GET",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`,
       ...(options.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey } : {})
     },
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
