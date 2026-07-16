@@ -8,18 +8,17 @@ const { join } = require("node:path");
 const root = join(__dirname, "..");
 const source = (...parts) => readFileSync(join(root, ...parts), "utf8");
 const api = source("legacy-api", "contributor.js");
-const migration = source("migrations", "008_revision_aware_sentence_review.sql");
+const migration = source("migrations", "010_local_contributor_drafts.sql");
 
-test("draft mutations are scoped to the authenticated owner", () => {
-  for (const action of ["save_draft", "duplicate_draft", "delete_draft", "review_sentence"]) assert.match(api, new RegExp(`action === \\"${action}\\"`));
-  assert.match(api, /owner_id=eq\.\$\{actor\.id\}/);
-  assert.match(api, /source_draft_id=eq\.\$\{id\}&creator_id=eq\.\$\{actor\.id\}/);
+test("working drafts are local and only final packs are submitted", () => {
+  assert.match(api, /action === "submit_pack"/);
+  assert.match(api, /Contributor drafts and reviews are stored in this browser/);
+  assert.match(migration, /drop table if exists public\.sentence_review_progress/);
+  assert.match(migration, /drop table if exists public\.contributor_drafts/);
 });
 
-test("database submission eligibility uses current-revision approvals", () => {
-  assert.match(migration, /status='approved'/);
-  assert.match(migration, /draft_revision=d\.revision/);
-  assert.match(migration, /every current sentence revision must be approved/);
+test("database persists an immutable final pack for moderation", () => {
+  assert.match(migration, /create or replace function public\.submit_pack/);
   assert.match(migration, /insert into submission_versions/);
 });
 
@@ -27,5 +26,5 @@ test("contributor UI exposes creation, editing, review, preview, and status scre
   const workspace = source("components", "contribute-workspace.tsx");
   for (const component of ["ContributorDashboard", "PackEditor", "SentenceReview", "PackPreview", "SubmissionStatus"]) assert.match(workspace, new RegExp(component));
   const review = source("components", "contributor", "sentence-review.tsx");
-  for (const action of ["Approve", "Needs changes", "Edit sentence", "Skip temporarily", "Return to unresolved"]) assert.match(review, new RegExp(action));
+  for (const action of ["Approve", "Needs changes", "Mark all as reviewed", "Edit sentence", "Skip temporarily", "Return to unresolved"]) assert.match(review, new RegExp(action));
 });

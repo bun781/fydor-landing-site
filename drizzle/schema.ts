@@ -72,55 +72,9 @@ export const moderatorLanguageAssignments = pgTable("moderator_language_assignme
   version: integer("version").notNull().default(1)
 }, (table) => [primaryKey({ columns: [table.moderatorId, table.languageCode] })]);
 
-export const contributorDrafts = pgTable("contributor_drafts", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  ownerId: uuid("owner_id").notNull().references(() => profiles.id, { onDelete: "restrict" }),
-  purpose: text("purpose").notNull().default("contributor"),
-  state: text("state").notNull().default("draft"),
-  title: text("title").notNull(),
-  targetLanguage: text("target_language").notNull().references(() => supportedLanguages.code),
-  baseLanguage: text("base_language").notNull().references(() => supportedLanguages.code),
-  level: text("level").notNull(),
-  canonicalJson: jsonb("canonical_json").notNull(),
-  contentHash: text("content_hash").notNull(),
-  schemaVersion: integer("schema_version").notNull(),
-  generationSource: text("generation_source").notNull().default("manual"),
-  creationMethod: text("creation_method").notNull().default("ai"),
-  possibleDuplicate: boolean("possible_duplicate").notNull().default(false),
-  contributorNote: text("contributor_note"),
-  duplicateMatchSubmissionId: uuid("duplicate_match_submission_id"),
-  duplicateSimilarity: text("duplicate_similarity"),
-  duplicateReasons: jsonb("duplicate_reasons").notNull().default([]),
-  promptTemplateVersion: text("prompt_template_version"),
-  conversionSourceLessonId: text("conversion_source_lesson_id"),
-  revision: integer("revision").notNull().default(1),
-  createdAt: createdAt(),
-  updatedAt: updatedAt()
-}, (table) => [
-  index("contributor_drafts_owner_idx").on(table.ownerId, table.updatedAt),
-  check("contributor_drafts_purpose_check", sql`${table.purpose} = 'contributor'`),
-  check("contributor_drafts_state_check", sql`${table.state} in ('draft','reviewing','changes_requested','withdrawn')`)
-]);
-
-export const sentenceReviewProgress = pgTable("sentence_review_progress", {
-  draftId: uuid("draft_id").notNull().references(() => contributorDrafts.id, { onDelete: "cascade" }),
-  sentenceIndex: integer("sentence_index").notNull(),
-  status: text("status").notNull(),
-  draftRevision: integer("draft_revision").notNull(),
-  reviewerNote: text("reviewer_note"),
-  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
-  updatedAt: updatedAt()
-}, (table) => [
-  primaryKey({ columns: [table.draftId, table.sentenceIndex] }),
-  check("sentence_review_index_check", sql`${table.sentenceIndex} >= 0`),
-  check("sentence_review_status_check", sql`${table.status} in ('unreviewed','approved','needs_changes')`),
-  index("sentence_review_revision_idx").on(table.draftId, table.draftRevision, table.status)
-]);
-
 export const submissions = pgTable("submissions", {
   id: uuid("id").primaryKey().defaultRandom(),
   creatorId: uuid("creator_id").notNull().references(() => profiles.id, { onDelete: "restrict" }),
-  sourceDraftId: uuid("source_draft_id").notNull().references(() => contributorDrafts.id, { onDelete: "restrict" }),
   targetLanguage: text("target_language").notNull().references(() => supportedLanguages.code),
   baseLanguage: text("base_language").notNull().references(() => supportedLanguages.code),
   title: text("title").notNull(),

@@ -12,10 +12,11 @@ type Props = {
   onReview: (index: number, status: Exclude<ReviewStatus, "unreviewed">) => Promise<void>;
   onEdit: () => void;
   onSubmit: () => void;
+  onMarkAllAndSubmit: () => void;
   onBack: () => void;
 };
 
-export function SentenceReview({ pack, reviews, issues, saving, onReview, onEdit, onSubmit, onBack }: Props) {
+export function SentenceReview({ pack, reviews, issues, saving, onReview, onEdit, onSubmit, onMarkAllAndSubmit, onBack }: Props) {
   const sentences = useMemo(() => flattenSentences(pack), [pack]);
   const [filter, setFilter] = useState<Filter>("all");
   const [index, setIndex] = useState(0);
@@ -56,7 +57,7 @@ export function SentenceReview({ pack, reviews, issues, saving, onReview, onEdit
 
   return <div className="stack">
     <section className="workspace-card compact-card">
-      <div className="workspace-header"><div><button className="text-button" onClick={onBack}>← Edit pack</button><span className="eyebrow">Contributor review</span><h1>Review every sentence.</h1><p>Approval resets whenever a reviewed sentence or its lesson context changes.</p></div><button className="button" disabled={!ready || saving} onClick={onSubmit}>{saving ? "Submitting…" : "Submit for moderation"}</button></div>
+      <div className="workspace-header"><div><button className="text-button" onClick={onBack}>← Edit pack</button><span className="eyebrow">Contributor review</span><h1>Review every sentence.</h1><p>Approval resets whenever a reviewed sentence or its lesson context changes.</p></div><div className="workspace-actions"><button className="button secondary" disabled={saving || blockingErrors > 0} onClick={onMarkAllAndSubmit}>Mark all as reviewed</button><button className="button" disabled={!ready || saving} onClick={onSubmit}>{saving ? "Submitting…" : "Submit for moderation"}</button></div></div>
       <div className="review-summary" aria-label="Review summary">
         <Summary label="Total sentences" value={sentences.length} />
         <Summary label="Approved" value={approved} tone="good" />

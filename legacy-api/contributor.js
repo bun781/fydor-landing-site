@@ -33,6 +33,7 @@ module.exports = async function handler(request, response) {
 
 async function handleGet(request, response, actor) {
   const action = String(request.query?.action || "drafts");
+  if (["drafts", "draft", "preflight"].includes(action)) throw httpError(410, "local_drafts", "Contributor drafts are stored in this browser.");
   if (action === "me") return send(response, 200, { actor: { id: actor.id, roles: actor.roles } });
   if (action === "drafts") {
     const rows = await db(`contributor_drafts?select=id,state,title,target_language,base_language,level,content_hash,schema_version,generation_source,prompt_template_version,revision,created_at,updated_at&owner_id=eq.${actor.id}&order=updated_at.desc&limit=100`);
@@ -88,6 +89,7 @@ async function handleGet(request, response, actor) {
 
 async function handlePost(request, response, actor, body) {
   const action = String(body.action || "");
+  if (["save_draft", "convert_personal", "duplicate_draft", "delete_draft", "review_sentence"].includes(action)) throw httpError(410, "local_drafts", "Contributor drafts and reviews are stored in this browser.");
   if (action === "prompt") {
     requireRole(actor, ["user", "contributor", "admin", "super_admin"]);
     return send(response, 200, buildLessonPrompt(body.input || {}));
@@ -199,29 +201,23 @@ async function handlePost(request, response, actor, body) {
     if (draft.state === "draft") await db(`contributor_drafts?id=eq.${draftId}&owner_id=eq.${actor.id}`, { method: "PATCH", body: { state: "reviewing", updated_at: new Date().toISOString() } });
     return send(response, 200, { review: rows[0] });
   }
-  if (action === "submit") {
+  if (action === "submit_pack") {
     requireRole(actor, ["contributor"]);
     const key = String(request.headers["idempotency-key"] || body.idempotencyKey || "").trim();
     if (!/^[A-Za-z0-9._:-]{16,160}$/.test(key)) throw httpError(400, "idempotency_required", "A valid idempotency key is required.");
-    const draftRows = await db(`contributor_drafts?select=id,owner_id,canonical_json,content_hash,title,target_language,base_language&owner_id=eq.${actor.id}&id=eq.${uuid(body.draftId)}&limit=1`);
-    if (!draftRows[0]) throw httpError(404, "not_found", "Contributor draft not found.");
-    const draft = draftRows[0];
-    const validation = validateContributionPack(draft.canonical_json);
+    const validation = validateContributionPack(body.pack);
     if (!validation.ok) throw Object.assign(httpError(422, "invalid_pack", "Resolve all blocking pack validation errors before submission."), { issues: validation.issues });
-    const duplicate = await findSubmissionDuplicate(draft);
+    const pack = validation.pack;
+    const submission = { content_hash: validation.contentHash, title: pack.title, target_language: pack.language, base_language: pack.baseLanguage };
+    const duplicate = await findSubmissionDuplicate(submission);
     if (duplicate) throw httpError(409, duplicate.code, duplicate.message);
-    const nearDuplicate = await findPackNearDuplicate(draft);
-    await db(`contributor_drafts?id=eq.${draft.id}&owner_id=eq.${actor.id}`, { method: "PATCH", body: {
-      possible_duplicate: nearDuplicate.possibleDuplicate,
-      duplicate_match_submission_id: nearDuplicate.matchingPackId,
-      duplicate_similarity: nearDuplicate.possibleDuplicate ? nearDuplicate.highestOverlap : null,
-      duplicate_reasons: nearDuplicate.reasons,
-      updated_at: new Date().toISOString()
-    }});
-    const result = await rpc("submit_draft", {
-      p_actor: actor.id, p_draft: uuid(body.draftId),
-      p_expected_revision: positiveInt(body.expectedRevision, "expectedRevision"),
-      p_confirmed: body.confirmed === true, p_idempotency: key
+    const nearDuplicate = await findPackNearDuplicate({ ...submission, canonical_json: pack });
+    const result = await rpc("submit_pack", {
+      p_actor: actor.id, p_pack: pack, p_content_hash: validation.contentHash,
+      p_generation_source: generationSource(body.generationSource), p_creation_method: body.creationMethod === "upload" ? "upload" : "ai",
+      p_confirmed: body.confirmed === true, p_idempotency: key,
+      p_possible_duplicate: nearDuplicate.possibleDuplicate, p_duplicate_match_submission_id: nearDuplicate.matchingPackId,
+      p_duplicate_similarity: nearDuplicate.possibleDuplicate ? nearDuplicate.highestOverlap : null, p_duplicate_reasons: nearDuplicate.reasons
     });
     return send(response, 201, { submission: result });
   }

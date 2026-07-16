@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ContributorDashboard } from "@/components/contributor/dashboard";
+import { LlmGenerator, type GenerationSource } from "@/components/contributor/llm-generator";
 import { PackEditor } from "@/components/contributor/pack-editor";
 import { PackPreview } from "@/components/contributor/pack-preview";
 import { SentenceReview } from "@/components/contributor/sentence-review";
@@ -13,8 +14,9 @@ import {
 } from "@/lib/contributor-pack";
 import { createClient } from "@/lib/supabase/browser";
 import { api, WebsiteApiError } from "@/lib/website-api";
+import { deleteLocalDraft, duplicateLocalDraft, getLocalDraft, listLocalDrafts, saveLocalDraft } from "@/lib/local-contributor-drafts";
 
-type View = "dashboard" | "editor" | "review" | "preview" | "submission";
+type View = "dashboard" | "editor" | "review" | "preview" | "submission" | "llm";
 
 export function ContributeWorkspace() {
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
@@ -32,16 +34,14 @@ export function ContributeWorkspace() {
   const [dirty, setDirty] = useState(false);
   const [message, setMessage] = useState("");
   const [serverIssues, setServerIssues] = useState<Array<{ path: string; message: string }>>([]);
+  const [generationSource, setGenerationSource] = useState<GenerationSource>("manual");
   const issues = useMemo(() => pack ? validatePackClient(pack) : [], [pack]);
 
   const loadDashboard = useCallback(async () => {
     setBusy(true);
     try {
-      const [draftResult, submissionResult] = await Promise.all([
-        api<{ drafts: DraftSummary[] }>("/api/contributor?action=drafts"),
-        api<{ submissions: Submission[] }>("/api/contributor?action=submissions")
-      ]);
-      setDrafts(draftResult.drafts); setSubmissions(submissionResult.submissions); setMessage("");
+      const submissionResult = await api<{ submissions: Submission[] }>("/api/contributor?action=submissions");
+      setDrafts(listLocalDrafts()); setSubmissions(submissionResult.submissions); setMessage("");
     } catch (error) { setMessage(errorMessage(error, "Unable to load your packs.")); }
     finally { setBusy(false); }
   }, []);
@@ -62,12 +62,12 @@ export function ContributeWorkspace() {
     if (pack) setReviews((current) => resetChangedReviews(pack, next, current));
     setPack(next); setDirty(true); setServerIssues([]);
   }
-  function startCreate() { setDraft(null); setPack(createBlankPack()); setReviews(new Map()); setDirty(true); setView("editor"); setMessage(""); }
-  async function importPack(text: string) {
+  function startCreate() { setGenerationSource("manual"); setDraft(null); setPack(createBlankPack()); setReviews(new Map()); setDirty(true); setView("editor"); setMessage(""); }
+  async function importPack(text: string, source: GenerationSource = "manual") {
     setBusy(true);
     try {
       const result = await api<{ pack: Pack }>("/api/contributor", { method: "POST", body: { action: "validate_pack", pack: text } });
-      setDraft(null); setPack(result.pack); setReviews(new Map()); setDirty(true); setView("editor"); setMessage("Pack imported. Save it as a draft, then use Review & submit to send it for moderation.");
+      setGenerationSource(source); setDraft(null); setPack(result.pack); setReviews(new Map()); setDirty(true); setView("editor"); setMessage("Pack loaded. Save it as a draft, then use Review & submit to send it for moderation.");
     } catch (error) { captureError(error, "Unable to import that pack."); }
     finally { setBusy(false); }
   }
@@ -75,27 +75,22 @@ export function ContributeWorkspace() {
     if (dirty && !window.confirm("Discard your unsaved changes?")) return;
     setBusy(true);
     try {
-      const result = await api<{ draft: Draft }>(`/api/contributor?action=draft&id=${encodeURIComponent(id)}`);
-      setDraft(result.draft); setPack(result.draft.canonical_json);
-      setReviews(new Map((result.draft.sentence_review_progress ?? []).map((row) => [row.sentence_index, reviewStatus(row)])));
+      const result = getLocalDraft(id); if (!result) throw new Error("This local draft is no longer available.");
+      setDraft(result); setPack(result.canonical_json);
+      setReviews(new Map((result.sentence_review_progress ?? []).map((row) => [row.sentence_index, reviewStatus(row)])));
       setDirty(false); setServerIssues([]); setView(nextView); setMessage("");
     } catch (error) { captureError(error, "Unable to open this draft."); }
     finally { setBusy(false); }
   }
   async function saveDraft(startReview = false): Promise<Draft | null> {
     if (!pack) return null;
-    setBusy(true);
     try {
-      const result = await api<{ draft: Draft }>("/api/contributor", { method: "POST", body: {
-        action: "save_draft", pack, state: startReview ? "reviewing" : draft?.state === "changes_requested" ? "changes_requested" : "draft",
-        generationSource: "manual", creationMethod: draft ? "manual" : "upload",
-        ...(draft ? { draftId: draft.id, expectedRevision: draft.revision } : {})
-      } });
-      setDraft(result.draft); setPack(result.draft.canonical_json);
-      setReviews(new Map((result.draft.sentence_review_progress ?? []).map((row) => [row.sentence_index, reviewStatus(row)])));
+      const result = saveLocalDraft({ draft, pack, reviews, state: startReview ? "reviewing" : draft?.state === "changes_requested" ? "changes_requested" : "draft" });
+      setDraft(result); setPack(result.canonical_json);
+      setReviews(new Map((result.sentence_review_progress ?? []).map((row) => [row.sentence_index, reviewStatus(row)])));
       setDirty(false); setServerIssues([]); setMessage(startReview ? "Draft saved. Review the latest sentence revisions." : "Draft saved.");
       void loadDashboard();
-      return result.draft;
+      return result;
     } catch (error) { captureError(error, "Unable to save this draft."); return null; }
     finally { setBusy(false); }
   }
@@ -103,29 +98,36 @@ export function ContributeWorkspace() {
   async function markReview(index: number, status: Exclude<ReviewStatus, "unreviewed">) {
     if (!draft) return;
     try {
-      await api("/api/contributor", { method: "POST", body: { action: "review_sentence", draftId: draft.id, sentenceIndex: index, status } });
-      setReviews((current) => new Map(current).set(index, status)); setMessage(status === "approved" ? "Sentence approved." : "Sentence marked as needing changes.");
+      const next = new Map(reviews).set(index, status);
+      setReviews(next); saveLocalDraft({ draft, pack: draft.canonical_json, reviews: next, state: "reviewing" });
+      setMessage(status === "approved" ? "Sentence approved." : "Sentence marked as needing changes.");
     } catch (error) { captureError(error, "Unable to update sentence review."); }
   }
-  async function submit() {
-    if (!draft || issues.length || [...reviews.values()].filter((item) => item === "approved").length !== (pack?.lessons.reduce((total, lesson) => total + lesson.sentences.length, 0) ?? 0)) return;
+  async function submit(approvedReviews = reviews) {
+    if (!draft || !pack || issues.length || [...approvedReviews.values()].filter((item) => item === "approved").length !== pack.lessons.reduce((total, lesson) => total + lesson.sentences.length, 0)) return;
     setBusy(true);
     try {
-      await api("/api/contributor", { method: "POST", idempotencyKey: `submit:${crypto.randomUUID()}`, body: { action: "submit", draftId: draft.id, expectedRevision: draft.revision, confirmed: true } });
-      setDirty(false); setMessage("Submitted for moderation. The submitted revision is now immutable."); setView("dashboard"); await loadDashboard();
+      await api("/api/contributor", { method: "POST", idempotencyKey: `submit:${crypto.randomUUID()}`, body: { action: "submit_pack", pack, confirmed: true, generationSource, creationMethod: generationSource === "manual" ? "manual" : generationSource === "external" ? "ai" : "ai" } });
+      setDirty(false); setMessage("Submitted for moderation. Your local working copy remains in this browser."); setView("dashboard"); await loadDashboard();
     } catch (error) { captureError(error, "Unable to submit this pack."); }
     finally { setBusy(false); }
   }
+  async function markAllAndSubmit() {
+    if (!pack || !draft || !window.confirm("Mark every sentence as reviewed and submit this pack for moderation?")) return;
+    const next = new Map(flattenIndexes(pack).map((index) => [index, "approved" as ReviewStatus]));
+    setReviews(next); saveLocalDraft({ draft, pack, reviews: next, state: "reviewing" });
+    await submit(next);
+  }
   async function duplicateDraft(id: string) {
     setBusy(true);
-    try { const result = await api<{ draft: Draft }>("/api/contributor", { method: "POST", body: { action: "duplicate_draft", draftId: id } }); await loadDashboard(); await openDraft(result.draft.id); setMessage("Draft duplicated."); }
+    try { const result = duplicateLocalDraft(id); if (!result) throw new Error("This local draft is no longer available."); await loadDashboard(); await openDraft(result.id); setMessage("Draft duplicated."); }
     catch (error) { captureError(error, "Unable to duplicate this draft."); }
     finally { setBusy(false); }
   }
   async function deleteDraft(id: string) {
     if (!window.confirm("Delete this draft permanently?")) return;
     setBusy(true);
-    try { await api("/api/contributor", { method: "POST", body: { action: "delete_draft", draftId: id } }); await loadDashboard(); setMessage("Draft deleted."); }
+    try { deleteLocalDraft(id); await loadDashboard(); setMessage("Draft deleted."); }
     catch (error) { captureError(error, "Unable to delete this draft."); }
     finally { setBusy(false); }
   }
@@ -151,12 +153,14 @@ export function ContributeWorkspace() {
   return <>
     {message ? <div className="workspace-message" role="status">{message}</div> : null}
     {serverIssues.length ? <div className="workspace-errors" role="alert"><strong>Fix these issues</strong><ul>{serverIssues.slice(0, 12).map((issue) => <li key={`${issue.path}:${issue.message}`}><code>{issue.path}</code> {issue.message}</li>)}</ul></div> : null}
-    {view === "dashboard" ? <ContributorDashboard drafts={drafts} submissions={submissions} loading={busy} onCreate={startCreate} onImport={(text) => void importPack(text)} onOpen={(id) => void openDraft(id)} onDuplicate={(id) => void duplicateDraft(id)} onDelete={(id) => void deleteDraft(id)} onSubmission={(id) => void openSubmission(id)} onRefresh={() => void loadDashboard()} /> : null}
+    {view === "dashboard" ? <ContributorDashboard drafts={drafts} submissions={submissions} loading={busy} onCreate={startCreate} onGenerate={() => { setMessage(""); setView("llm"); }} onImport={(text) => void importPack(text, "manual")} onOpen={(id) => void openDraft(id)} onDuplicate={(id) => void duplicateDraft(id)} onDelete={(id) => void deleteDraft(id)} onSubmission={(id) => void openSubmission(id)} onRefresh={() => void loadDashboard()} /> : null}
+    {view === "llm" ? <LlmGenerator onBack={() => setView("dashboard")} onLoadJson={(text, source) => void importPack(text, source)} /> : null}
     {view === "editor" && pack ? <PackEditor pack={pack} issues={issues} saving={busy} onChange={changePack} onSave={() => void saveDraft()} onReview={() => void startReview()} onPreview={() => setView("preview")} onBack={backToDashboard} /> : null}
-    {view === "review" && pack ? <SentenceReview pack={pack} reviews={reviews} issues={issues} saving={busy} onReview={markReview} onEdit={() => setView("editor")} onSubmit={() => void submit()} onBack={() => setView("editor")} /> : null}
+    {view === "review" && pack ? <SentenceReview pack={pack} reviews={reviews} issues={issues} saving={busy} onReview={markReview} onEdit={() => setView("editor")} onSubmit={() => void submit()} onMarkAllAndSubmit={() => void markAllAndSubmit()} onBack={() => setView("editor")} /> : null}
     {view === "preview" && pack ? <PackPreview pack={pack} onBack={() => setView("editor")} /> : null}
-    {view === "submission" && selectedSubmission ? <SubmissionStatus submission={selectedSubmission} versions={versions} feedback={feedback} onRevise={(id) => void openDraft(id)} onBack={backToDashboard} /> : null}
+    {view === "submission" && selectedSubmission ? <SubmissionStatus submission={selectedSubmission} versions={versions} feedback={feedback} onBack={backToDashboard} /> : null}
   </>;
 }
 
 function errorMessage(error: unknown, fallback: string) { return error instanceof Error ? error.message : fallback; }
+function flattenIndexes(pack: Pack) { let index = 0; return pack.lessons.flatMap((lesson) => lesson.sentences.map(() => index++)); }

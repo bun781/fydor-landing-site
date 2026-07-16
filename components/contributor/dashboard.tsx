@@ -8,6 +8,7 @@ type Props = {
   submissions: Submission[];
   loading: boolean;
   onCreate: () => void;
+  onGenerate: () => void;
   onImport: (text: string) => void;
   onOpen: (id: string) => void;
   onDuplicate: (id: string) => void;
@@ -16,7 +17,7 @@ type Props = {
   onRefresh: () => void;
 };
 
-export function ContributorDashboard({ drafts, submissions, loading, onCreate, onImport, onOpen, onDuplicate, onDelete, onSubmission, onRefresh }: Props) {
+export function ContributorDashboard({ drafts, submissions, loading, onCreate, onGenerate, onImport, onOpen, onDuplicate, onDelete, onSubmission, onRefresh }: Props) {
   async function importFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]; event.target.value = "";
     if (file) onImport(await file.text());
@@ -26,7 +27,7 @@ export function ContributorDashboard({ drafts, submissions, loading, onCreate, o
   const published = submissions.filter((item) => item.state === "published");
   const closed = submissions.filter((item) => ["rejected", "withdrawn", "archived"].includes(item.state));
   return <div className="stack">
-    <section className="workspace-card contributor-hero"><div><span className="eyebrow">Contributor workspace</span><h1>Build packs people want to study.</h1><p>Create from scratch or import a supported Fydor JSON pack. Drafts stay editable; every submission becomes an immutable revision.</p></div><div className="workspace-actions"><button className="button" onClick={onCreate}>Create pack</button><label className="button secondary file-button">Import Fydor JSON<input type="file" accept=".json,.fydorpack,application/json" onChange={(event) => void importFile(event)} /></label><button className="button secondary" disabled={loading} onClick={onRefresh}>Refresh</button></div></section>
+    <section className="workspace-card contributor-hero"><div><span className="eyebrow">Contributor workspace</span><h1>Build packs people want to study.</h1><p>Create from scratch, generate lesson JSON with an LLM, or import a supported Fydor JSON pack. Drafts stay editable; every submission becomes an immutable revision.</p></div><div className="workspace-actions"><button className="button" onClick={onCreate}>Write your own</button><button className="button secondary" onClick={onGenerate}>Generate with an LLM</button><label className="button secondary file-button">Import Fydor JSON<input type="file" accept=".json,.fydorpack,application/json" onChange={(event) => void importFile(event)} /></label><button className="button secondary" disabled={loading} onClick={onRefresh}>Refresh</button></div></section>
     <DashboardSection title="Drafts" subtitle="Saved work you can resume, duplicate, review, or delete before first submission." empty="No drafts yet. Create a pack to begin." emptyState={!drafts.length}>
       {drafts.map((draft) => <article className="pack-row" key={draft.id}><div><span className={`review-status status-${draft.state}`}>{draft.state.replaceAll("_", " ")}</span><h3>{draft.title || "Untitled pack"}</h3><p>{draft.target_language} → {draft.base_language} · {draft.level || "No level"} · Revision {draft.revision}</p><small>Updated {date(draft.updated_at)}</small></div><div className="workspace-actions"><button className="button" onClick={() => onOpen(draft.id)}>Resume</button><button className="button secondary" onClick={() => onDuplicate(draft.id)}>Duplicate</button><button className="button secondary danger-text" onClick={() => onDelete(draft.id)}>Delete</button></div></article>)}
     </DashboardSection>
