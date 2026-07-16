@@ -14,10 +14,22 @@ export function AuthForm({ mode }: { mode: "login" | "signup" | "forgot" | "rese
 
     try {
       const supabase = createClient();
-      if (mode === "login") { const { error } = await supabase.auth.signInWithPassword({ email, password }); if (error) setMessage("Unable to sign in. Check your details and try again."); else { router.replace("/contribute"); router.refresh(); } }
-      else if (mode === "signup") { const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${location.origin}/auth/callback?next=/contribute` } }); setMessage(error ? "We could not create that account. Try again later." : "Check your email to confirm your account."); }
-      else if (mode === "forgot") { const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${location.origin}/auth/callback?next=/reset-password` }); setMessage(error ? "We could not start password recovery. Try again later." : "If the address is eligible, recovery instructions have been sent."); }
-      else { const { error } = await supabase.auth.updateUser({ password }); setMessage(error ? "We could not update your password." : "Password updated. You can now continue."); }
+      if (mode === "login") {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) setMessage(error.message);
+        else { router.replace("/contribute"); router.refresh(); }
+      } else if (mode === "signup") {
+        const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${location.origin}/auth/callback?next=/contribute` } });
+        if (error) setMessage(error.message);
+        else if (data.session) { router.replace("/contribute"); router.refresh(); }
+        else setMessage("Check your email to confirm your account.");
+      } else if (mode === "forgot") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${location.origin}/auth/callback?next=/reset-password` });
+        setMessage(error ? error.message : "If the address is eligible, recovery instructions have been sent.");
+      } else {
+        const { error } = await supabase.auth.updateUser({ password });
+        setMessage(error ? error.message : "Password updated. You can now continue.");
+      }
     } catch (error) {
       console.error("Supabase authentication request failed.", error);
       setMessage("Account services are unavailable right now. Please try again later.");
