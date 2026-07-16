@@ -1,17 +1,24 @@
 "use client";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { createClient } from "@/lib/supabase/browser";
 export function AuthForm({ mode }: { mode: "login" | "signup" | "forgot" | "reset" }) {
   const router = useRouter(); const [message, setMessage] = useState(""); const [busy, setBusy] = useState(false);
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void submit(new FormData(event.currentTarget));
+  }
   async function submit(form: FormData) {
-    setBusy(true);
     setMessage("");
-    const email = String(form.get("email") || "");
+    const email = String(form.get("email") || "").trim();
     const password = String(form.get("password") || "");
+    if (mode !== "reset" && !email) return setMessage("Enter your email address.");
+    if (mode !== "forgot" && !password) return setMessage("Enter your password.");
+    if ((mode === "signup" || mode === "reset") && password.length < 8) return setMessage("Use at least 8 characters for your new password.");
 
+    setBusy(true);
     try {
       const supabase = createClient();
       if (mode === "login") {
@@ -38,5 +45,5 @@ export function AuthForm({ mode }: { mode: "login" | "signup" | "forgot" | "rese
     }
   }
   const title = mode === "login" ? "Sign in" : mode === "signup" ? "Create account" : mode === "forgot" ? "Reset your password" : "Choose a new password";
-  return <><SiteNav /><main className="auth-page"><section className="auth-card"><div><span className="eyebrow">Fydor Exchange</span><h1>{title}</h1></div><form action={submit}>{mode !== "reset" && <label>Email<input name="email" type="email" autoComplete="email" required /></label>}{mode !== "forgot" && <label>Password<input name="password" type="password" minLength={8} autoComplete={mode === "login" ? "current-password" : "new-password"} required /></label>}<button className="button" disabled={busy}>{busy ? "Please wait…" : title}</button></form>{message && <p role="status">{message}</p>}<div className="auth-links">{mode === "login" && <><Link href="/signup">Create an account</Link><Link href="/forgot-password">Forgot password?</Link></>}{mode === "signup" && <Link href="/login">Already have an account?</Link>}{mode !== "login" && mode !== "signup" && <Link href="/login">Back to sign in</Link>}</div></section></main></>;
+  return <><SiteNav /><main className="auth-page"><section className="auth-card"><div><span className="eyebrow">Fydor Exchange</span><h1>{title}</h1></div><form noValidate onSubmit={handleSubmit}>{mode !== "reset" && <label>Email<input name="email" type="email" autoComplete="email" required /></label>}{mode !== "forgot" && <label>Password<input name="password" type="password" minLength={mode === "login" ? undefined : 8} autoComplete={mode === "login" ? "current-password" : "new-password"} required /></label>}<button className="button" disabled={busy}>{busy ? "Please wait…" : title}</button></form>{message && <p role="status" aria-live="polite">{message}</p>}<div className="auth-links">{mode === "login" && <><Link href="/signup">Create an account</Link><Link href="/forgot-password">Forgot password?</Link></>}{mode === "signup" && <Link href="/login">Already have an account?</Link>}{mode !== "login" && mode !== "signup" && <Link href="/login">Back to sign in</Link>}</div></section></main></>;
 }
