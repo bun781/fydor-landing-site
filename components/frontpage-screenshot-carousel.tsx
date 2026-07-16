@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import frontpagePreview from "../frontpage-previews/frontpage preview.png";
 
 const screenshots = [
+  { src: frontpagePreview.src, alt: "Fydor desktop app frontpage preview", label: "Fydor" },
   { src: "/frontpage-previews/review.png", alt: "Fydor's sentence review workspace", label: "Review" },
   { src: "/frontpage-previews/lesson-builder.png", alt: "Fydor's lesson builder workspace", label: "Lesson builder" },
   { src: "/frontpage-previews/reading.png", alt: "Fydor's lesson reading workspace", label: "Reading" },
@@ -15,7 +17,7 @@ export function FrontpageScreenshotCarousel() {
   const showNext = () => setActive((current) => (current + 1) % screenshots.length);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setActive((current) => (current + 1) % screenshots.length), 5000);
+    const timer = window.setInterval(() => setActive((current) => (current + 1) % screenshots.length), 10000);
     return () => window.clearInterval(timer);
   }, []);
 
