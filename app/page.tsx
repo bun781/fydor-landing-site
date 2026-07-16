@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FrontpageScreenshotCarousel } from "@/components/frontpage-screenshot-carousel";
 import { SiteFooter, SiteNav } from "@/components/site-nav";
 
 const WindowsIcon = () => (
@@ -41,28 +42,7 @@ export default function Home() {
             <Link className="text-link" href="/library">Browse the Exchange <span aria-hidden="true">→</span></Link>
           </div>
 
-          <div className="app-preview" aria-label="Preview of the Fydor review workspace">
-            <div className="preview-sidebar">
-              <div className="preview-logo"><img src="/assets/fydor-logo.png" alt="" /></div>
-              <span /><span className="active" /><span /><span />
-            </div>
-            <div className="preview-main">
-              <div className="preview-topbar">
-                <div><h2>Review</h2><p>Today&apos;s sentence queue</p></div>
-                <span className="pill">SRS</span>
-              </div>
-              <div className="sentence-card">
-                <span className="pill pill-word">Sentence</span>
-                <p className="target-text">Je voudrais apprendre avec des phrases utiles.</p>
-                <p className="translation">I would like to learn with useful sentences.</p>
-              </div>
-              <div className="preview-grid">
-                <div><strong>18</strong><span>Due</span></div>
-                <div><strong>6</strong><span>New</span></div>
-                <div><strong>92%</strong><span>Recall</span></div>
-              </div>
-            </div>
-          </div>
+          <FrontpageScreenshotCarousel />
         </section>
 
         <section className="section split" id="features" aria-labelledby="features-title">

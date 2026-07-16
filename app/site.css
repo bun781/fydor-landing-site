@@ -95,22 +95,15 @@ main { margin: 0 auto; max-width: 1180px; padding: 48px clamp(18px, 5vw, 64px) 9
 .pill-word { border-color: var(--word); color: var(--word); }
 .platform-pill { align-items: center; background: var(--surface-muted); color: var(--ink); gap: 6px; }
 
-.app-preview { background: radial-gradient(circle at top left, rgba(181,154,106,.14), transparent 38%), linear-gradient(180deg,rgba(255,255,255,.76),rgba(255,255,255,.94)); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 24px 70px rgba(28,25,23,.12); display: grid; grid-template-columns: 68px 1fr; min-height: 470px; overflow: hidden; }
-.preview-sidebar { align-content: start; background: #f2efe9; border-right: 1px solid var(--line); display: grid; gap: 14px; justify-items: center; padding: 18px 12px; }
-.preview-logo { border-bottom: 1px solid var(--line); padding-bottom: 18px; }
-.preview-logo img { border-radius: 8px; display: block; height: 42px; width: 42px; }
-.preview-sidebar > span { background: rgba(120,113,108,.18); border-radius: 3px; display: block; height: 38px; width: 38px; }
-.preview-sidebar > span.active { background: linear-gradient(90deg,rgba(28,25,23,.16),rgba(28,25,23,.05)); box-shadow: inset 3px 0 0 var(--ink); }
-.preview-main { display: grid; gap: 18px; padding: clamp(18px,4vw,30px); }
-.preview-topbar { align-items: start; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; padding-bottom: 18px; }
-.preview-topbar p { color: var(--muted); font-size: 13px; margin-top: 4px; }
-.sentence-card { align-content: start; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; display: grid; gap: 14px; min-height: 220px; padding: 22px; }
-.target-text { font-family: Georgia, "Times New Roman", serif; font-size: clamp(27px,4vw,42px); line-height: 1.25; }
-.translation { color: var(--muted); }
-.preview-grid { display: grid; gap: 10px; grid-template-columns: repeat(3,minmax(0,1fr)); }
-.preview-grid div { background: var(--surface-muted); border: 1px solid var(--line); border-radius: 6px; display: grid; gap: 4px; min-height: 96px; padding: 14px; }
-.preview-grid strong { font-family: Georgia, "Times New Roman", serif; font-size: 30px; font-weight: 400; line-height: 1; }
-.preview-grid span { color: var(--muted); font-size: 12px; }
+.screenshot-carousel { display: grid; gap: 12px; margin: 0; min-width: 0; }
+.screenshot-frame { aspect-ratio: 1.3; background: #e8e2d9; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 24px 70px rgba(28,25,23,.12); overflow: hidden; position: relative; }
+.screenshot-frame img { height: 100%; inset: 0; object-fit: cover; opacity: 0; position: absolute; transition: opacity .45s ease; width: 100%; }
+.screenshot-frame img.is-active { opacity: 1; }
+.screenshot-carousel figcaption { align-items: center; color: var(--muted); display: flex; font-size: 11px; justify-content: space-between; letter-spacing: .04em; text-transform: uppercase; }
+.screenshot-controls { display: flex; gap: 6px; }
+.screenshot-controls button { background: #d6d0c7; border: 0; border-radius: 50%; cursor: pointer; height: 7px; padding: 0; transition: background .15s, transform .15s; width: 7px; }
+.screenshot-controls button[aria-pressed="true"] { background: var(--accent); transform: scale(1.2); }
+.screenshot-controls button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 
 .section { border-top: 1px solid var(--line); padding: clamp(42px,8vw,78px) 0; }
 .split { display: grid; gap: 28px; grid-template-columns: minmax(0,.8fr) minmax(0,1.2fr); }
@@ -190,9 +183,6 @@ main { margin: 0 auto; max-width: 1180px; padding: 48px clamp(18px, 5vw, 64px) 9
   .site-header { align-items: flex-start; flex-direction: column; }
   .hero, .split, .install-notes, .download-grid, .about-grid { grid-template-columns: 1fr; }
   .hero { min-height: auto; }
-  .app-preview { grid-template-columns: 54px 1fr; min-height: 420px; }
-  .preview-sidebar { padding: 14px 8px; }
-  .preview-sidebar > span { height: 32px; width: 32px; }
   .admin-nav { top: 113px; }
 }
 
@@ -201,7 +191,7 @@ main { margin: 0 auto; max-width: 1180px; padding: 48px clamp(18px, 5vw, 64px) 9
   .nav { gap: 12px; }
   .nav-account { border: 0; padding-left: 0; }
   .hero-actions, .hero-actions .button { width: 100%; }
-  .preview-grid { grid-template-columns: 1fr; }
+  .screenshot-carousel figcaption { align-items: flex-start; gap: 10px; }
   .workspace-header { display: grid; }
   .workspace-actions .button { flex: 1 1 100%; }
 }
