@@ -9,6 +9,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc -p tsconfig.json",
+    "auth:probe": "node scripts/auth-runtime-probe.mjs",
     "admin:bootstrap": "node scripts/admin-bootstrap.mjs",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",

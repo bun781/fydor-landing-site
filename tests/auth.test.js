@@ -23,9 +23,16 @@ test("Next.js auth pages use the canonical Supabase browser client", () => {
   assert.match(form, /finally/);
   assert.match(form, /noValidate/);
   assert.match(form, /onSubmit=\{handleSubmit\}/);
+  assert.match(form, /type="submit"/);
   assert.match(form, /mode === "login" \? undefined : 8/);
   assert.match(form, /Use at least 8 characters for your new password/);
-  assert.match(form, /data\.session\) window\.location\.assign\("\/contribute"\)/);
+  assert.match(form, /auth\.signInWithPassword/);
+  assert.match(form, /auth\.signUp/);
+  assert.match(form, /auth\.getSession/);
+  assert.match(form, /\[AUTH-UI\] submit clicked/);
+  assert.match(form, /\[AUTH-SUPABASE\] call starting/);
+  assert.match(form, /\[AUTH-SESSION\] session established/);
+  assert.match(form, /window\.location\.assign\("\/contribute"\)/);
   assert.doesNotMatch(form, /router\.refresh/);
   assert.match(client, /createBrowserClient/);
   assert.doesNotMatch(form, /\/api\/auth/);

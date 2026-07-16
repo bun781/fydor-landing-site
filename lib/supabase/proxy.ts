@@ -18,6 +18,15 @@ export async function updateSession(request: NextRequest) {
   });
   // getUser validates the session and gives Supabase time to write refreshed cookies.
   // Authorization remains the responsibility of pages and handlers.
-  await supabase.auth.getUser();
+  const { data, error } = await supabase.auth.getUser();
+  const missingSession = error?.code === "session_not_found" || error?.message === "Auth session missing!";
+  if (error && !missingSession) {
+    console.warn("[AUTH-SESSION] proxy refresh failed", {
+      errorCode: error.code,
+      errorMessage: error.message
+    });
+  } else if (data.user) {
+    console.info("[AUTH-SESSION] proxy session refreshed", { userIdExists: true });
+  }
   return response;
 }
