@@ -50,6 +50,9 @@ button, input, textarea, select { font: inherit; }
 .nav a { transition: color .15s; }
 .nav a:hover { color: var(--ink); }
 .nav-account { border-left: 1px solid var(--line); color: var(--ink); padding-left: 18px; }
+.nav-account-button { background: none; border-bottom: 0; border-right: 0; border-top: 0; cursor: pointer; }
+.nav-account-button:hover { color: var(--ink); }
+.nav-account-button:disabled { cursor: wait; opacity: .65; }
 
 main { margin: 0 auto; max-width: 1180px; padding: 48px clamp(18px, 5vw, 64px) 90px; }
 .site-header + main:has(.hero) { padding-top: 0; }

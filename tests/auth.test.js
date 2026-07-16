@@ -44,6 +44,17 @@ test("administration is a server-gated App Router page", () => {
   assert.match(admin, /AdminWorkspace/);
 });
 
+test("site navigation reflects the trusted signed-in account", () => {
+  const nav = readFileSync(join(__dirname, "..", "components", "site-nav.tsx"), "utf8");
+  assert.match(nav, /auth\.getSession\(\)/);
+  assert.match(nav, /api<[^>]+>\("\/api\/contributor\?action=me"\)/);
+  assert.match(nav, /roles\.includes\("admin"\)/);
+  assert.match(nav, /roles\.includes\("super_admin"\)/);
+  assert.match(nav, /account\?\.isAdmin && <Link href="\/admin">Admin<\/Link>/);
+  assert.match(nav, /auth\.signOut\(\)/);
+  assert.match(nav, /"Log out"/);
+});
+
 test("legacy compatibility handlers delegate token verification to Supabase Auth", () => {
   const auth = readFileSync(join(__dirname, "..", "lib", "auth.js"), "utf8");
   assert.match(auth, /auth\/v1\/user/);
