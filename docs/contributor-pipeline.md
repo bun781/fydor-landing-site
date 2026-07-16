@@ -76,8 +76,10 @@ moderation model. `migrations/002_usernames.sql` adds username support and
 `migrations/003_pack_contribution_workflow.sql` adds the shared pack hash,
 creation-method, duplicate-warning, and publication-hash extensions.
 `migrations/004_native_rate_limits.sql` adds Supabase-native fixed-window rate
-limits and the download counter. Apply all five through the normal Supabase
-migration runner in a test project first.
+limits and the download counter, `005_rls_hardening.sql` closes direct Data API
+access, and `006_auth_profile_sync.sql` mirrors API-safe Auth user fields into
+`public.profiles` while backfilling existing accounts. Apply all six through the
+normal Supabase migration runner in a test project first.
 
 The base migration creates:
 

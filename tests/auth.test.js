@@ -49,3 +49,12 @@ test("legacy compatibility handlers delegate token verification to Supabase Auth
   assert.match(auth, /auth\/v1\/user/);
   assert.doesNotMatch(auth, /jwtVerify|createRemoteJWKSet|decodeProtectedHeader/);
 });
+
+test("Auth users are mirrored into public profiles without credential data", () => {
+  const migration = readFileSync(join(__dirname, "..", "migrations", "006_auth_profile_sync.sql"), "utf8");
+  assert.match(migration, /after insert or update[\s\S]+on auth\.users/i);
+  assert.match(migration, /insert into public\.profiles/i);
+  assert.match(migration, /from auth\.users as users/i);
+  assert.match(migration, /insert into public\.user_roles/i);
+  assert.doesNotMatch(migration, /encrypted_password|confirmation_token|recovery_token/i);
+});

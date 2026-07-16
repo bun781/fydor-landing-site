@@ -20,7 +20,7 @@ Supabase through the server-only credential. Apply migration
 
 ## Contributor pipeline
 
-The contributor, moderation, administration, and public-library implementation is documented in `docs/contributor-pipeline.md`. The current route, Supabase SSR, RLS, and Vercel design is in `docs/architecture.md`. Apply migrations `001_contributor_pipeline.sql` through `005_rls_hardening.sql` before enabling protected routes.
+The contributor, moderation, administration, and public-library implementation is documented in `docs/contributor-pipeline.md`. The current route, Supabase SSR, RLS, and Vercel design is in `docs/architecture.md`. Apply migrations `001_contributor_pipeline.sql` through `006_auth_profile_sync.sql` before enabling protected routes.
 
 Drizzle ORM configuration lives in `drizzle.config.ts` and
 `drizzle/schema.ts` for migration tooling. `GET /api/library` reads published
