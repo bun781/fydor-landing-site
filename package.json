@@ -15,7 +15,7 @@
     "db:studio": "drizzle-kit studio"
   },
   "engines": {
-    "node": ">=20"
+    "node": "20.x"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
@@ -28,6 +28,8 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
     "drizzle-kit": "^0.31.10",
     "typescript": "~5.9.3"
   }
