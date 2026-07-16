@@ -1,2 +1,4 @@
-import { redirect } from "next/navigation";
-export default function Moderate() { redirect("/moderate.html"); }
+import { ModerationWorkspace } from "@/components/moderation-workspace";
+import { SiteNav } from "@/components/site-nav";
+
+export default function Moderate() { return <><SiteNav /><main><ModerationWorkspace /></main></>; }

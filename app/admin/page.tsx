@@ -1,7 +1,8 @@
-import { redirect } from "next/navigation";
+import { AdminWorkspace } from "@/components/admin-workspace";
+import { SiteNav } from "@/components/site-nav";
 import { requireAdmin } from "@/lib/auth/require-user";
 
 export default async function AdminPage() {
   await requireAdmin();
-  redirect("/admin.html");
+  return <><SiteNav /><main><AdminWorkspace /></main></>;
 }

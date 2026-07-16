@@ -18,10 +18,8 @@ name grants access.
 | `/api/contributor`, `/api/moderation` | authenticated | Contributor and moderation actions |
 | `/api/admin` | admin or super-admin | Privileged operations |
 
-`/index.html` and `/about.html` are retained redirects. The remaining `.html`
-workspace files are temporary compatibility assets. They use the same Supabase
-SSR browser-cookie session as the App Router routes, but remain scheduled for
-replacement by canonical App Router pages.
+All user-facing pages are App Router routes. Static assets in `public/` are
+limited to downloads and images.
 
 ## Auth and authorization
 

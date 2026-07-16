@@ -5,8 +5,8 @@
 `fydor-website` is a Vercel-hosted Next.js App Router application. Supabase
 provides verified user identity and PostgreSQL persistence. The desktop
 application remains local-first and never receives the Supabase service-role
-credential. Static workspace files under `public/` are temporary compatibility
-assets served by the App Router deployment.
+credential. User-facing workflows are App Router routes; `public/` contains
+only static downloads and images.
 
 Required server environment variables:
 
@@ -111,15 +111,13 @@ Requests have payload limits, structured errors, Supabase browser authentication
 server-side bearer-token validation, fixed-window production rate limits,
 optimistic concurrency, and idempotency on submission/transitions.
 Authenticated mutations require same-origin request signals and a valid
-Supabase access token. The static compatibility client uses the same Supabase
-SSR cookie session as the App Router auth pages.
+Supabase access token.
 
 ## User interfaces
 
-- `/contribute`, `/moderate`, and `/library` currently redirect to temporary
-  compatibility workspaces while their UI is migrated to App Router components.
-- `/admin` verifies the trusted server-side admin role before opening the
-  temporary administrative workspace.
+- `/contribute`, `/moderate`, and `/library` are App Router workspaces.
+- `/admin` is an App Router workspace guarded by the trusted server-side admin
+  role check.
 
 ## Desktop import flow
 

@@ -13,29 +13,18 @@ test("protected APIs only accept a Supabase bearer token", () => {
   assert.equal(accessToken({ headers: {} }), null);
 });
 
-test("contributor auth has no credential-bearing GET fallback or cookie proxy", () => {
-  const form = readFileSync(join(__dirname, "..", "public", "contribute.html"), "utf8");
-  const client = readFileSync(join(__dirname, "..", "public", "app-client.js"), "utf8");
-  assert.match(form, /<form class="entry-auth-form" data-auth-form method="post">/);
+test("Next.js auth pages use the canonical Supabase browser client", () => {
+  const form = readFileSync(join(__dirname, "..", "app", "(auth)", "AuthForm.tsx"), "utf8");
+  const client = readFileSync(join(__dirname, "..", "lib", "supabase", "browser.ts"), "utf8");
+  assert.match(form, /createClient/);
   assert.match(client, /createBrowserClient/);
-  assert.doesNotMatch(client, /\/api\/auth/);
-  assert.match(client, /auth\.getSession\(\)/);
-  assert.doesNotMatch(client, /auth\.getUser\(\)/);
+  assert.doesNotMatch(form, /\/api\/auth/);
 });
 
-test("administration is entered from the authenticated contributor workspace", () => {
-  const contribute = readFileSync(join(__dirname, "..", "public", "contribute.html"), "utf8");
-  const contributeClient = readFileSync(join(__dirname, "..", "public", "contribute.js"), "utf8");
-  const admin = readFileSync(join(__dirname, "..", "public", "admin.html"), "utf8");
-  const adminClient = readFileSync(join(__dirname, "..", "public", "admin.js"), "utf8");
-  assert.match(contribute, /data-admin-entry[^>]+hidden/);
-  assert.match(contributeClient, /\/api\/contributor\?action=me/);
-  assert.match(contributeClient, /fydor-admin-entry/);
-  assert.doesNotMatch(admin, /data-auth-form/);
-  assert.match(adminClient, /sessionStorage\.getItem\("fydor-admin-entry"\)/);
-  assert.match(adminClient, /\/api\/admin\?action=me/);
-  assert.match(adminClient, /data-admin-loading/);
-  assert.match(adminClient, /Couldn't verify administration access/);
+test("administration is a server-gated App Router page", () => {
+  const admin = readFileSync(join(__dirname, "..", "app", "admin", "page.tsx"), "utf8");
+  assert.match(admin, /await requireAdmin\(\)/);
+  assert.match(admin, /AdminWorkspace/);
 });
 
 test("legacy compatibility handlers delegate token verification to Supabase Auth", () => {

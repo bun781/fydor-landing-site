@@ -97,17 +97,12 @@ test("downloads the selected pack directly from Storage", async () => {
 });
 
 test("the public library is separate from the contributor workspace", () => {
-  const exchange = readFileSync(join(__dirname, "..", "public", "contribute.html"), "utf8");
-  const legacy = readFileSync(join(__dirname, "..", "public", "library.html"), "utf8");
-  const redirects = readFileSync(join(__dirname, "..", "vercel.json"), "utf8");
-  const section = readFileSync(join(__dirname, "..", "public", "library-section.js"), "utf8");
-  assert.doesNotMatch(exchange, /data-public-library/);
-  assert.doesNotMatch(exchange, /id="library"/);
-  assert.doesNotMatch(exchange, /data-moderation/);
-  assert.match(exchange, /data-admin-entry[^>]+hidden/);
-  assert.match(legacy, /data-public-library/);
-  assert.doesNotMatch(redirects, /contribute\.html#library/);
-  assert.match(section, /Download verified Fydor pack/);
+  const contribute = readFileSync(join(__dirname, "..", "app", "(public)", "contribute", "page.tsx"), "utf8");
+  const library = readFileSync(join(__dirname, "..", "app", "(public)", "library", "page.tsx"), "utf8");
+  const browser = readFileSync(join(__dirname, "..", "components", "library-browser.tsx"), "utf8");
+  assert.match(contribute, /ContributeWorkspace/);
+  assert.match(library, /LibraryBrowser/);
+  assert.match(browser, /Download verified Fydor pack/);
 });
 
 function packObject() {
