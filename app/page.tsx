@@ -33,10 +33,10 @@ export default function Home() {
               and reviewing what matters with calm spaced repetition.
             </p>
             <div className="hero-actions" id="download">
-              <DownloadLink className="button" file={windowsDownload}>
+              <DownloadLink className="button" file={windowsDownload} platform="windows">
                 <WindowsIcon /> Download for Windows
               </DownloadLink>
-              <DownloadLink className="button secondary" file={macDownload}>
+              <DownloadLink className="button secondary" file={macDownload} platform="mac">
                 <AppleIcon /> Download for Mac
               </DownloadLink>
             </div>
@@ -70,13 +70,13 @@ export default function Home() {
               <span className="pill platform-pill"><WindowsIcon /> Windows</span>
               <strong>Fydor for Windows</strong>
               <span>Install the current desktop release and keep your study library local.</span>
-              <div className="download-card-actions"><DownloadLink className="button" file={windowsDownload}>Download {desktopRelease}</DownloadLink><Link className="text-link" href="/install?platform=windows">Open after download</Link></div>
+              <div className="download-card-actions"><DownloadLink className="button" file={windowsDownload} platform="windows">Download {desktopRelease}</DownloadLink><Link className="text-link" href="/install?platform=windows">Open after download</Link></div>
             </article>
             <article className="download-card">
               <span className="pill platform-pill"><AppleIcon /> macOS</span>
               <strong>Fydor for Mac</strong>
               <span>Open the disk image, then drag Fydor into Applications.</span>
-              <div className="download-card-actions"><DownloadLink className="button" file={macDownload}>Download {desktopRelease}</DownloadLink><Link className="text-link" href="/install?platform=mac">Open after download</Link></div>
+              <div className="download-card-actions"><DownloadLink className="button" file={macDownload} platform="mac">Download {desktopRelease}</DownloadLink><Link className="text-link" href="/install?platform=mac">Open after download</Link></div>
             </article>
           </div>
         </section>
