@@ -13,8 +13,8 @@ for (const file of files) {
     process.exit(result.status || 1);
   }
 }
-// App Router owns rendered HTML. Root-level HTML files are compatibility
-// sources until their workspaces are converted and are not deployment routes.
+// Public compatibility workspaces remain deployed until their App Router
+// replacements are complete, so validate every checked-in HTML script link.
 for (const file of walk(root).filter((item) => item.endsWith(".html") && relative(root, item).includes("/"))) {
   const html = readFileSync(file, "utf8");
   for (const match of html.matchAll(/<script[^>]+src="([^"]+)"/g)) {
@@ -29,7 +29,7 @@ console.log(`Checked ${files.length} JavaScript files and static HTML references
 function walk(dir) {
   const output = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if ([".git", ".next", "node_modules", "downloads", "public"].includes(entry.name)) continue;
+    if ([".git", ".next", "node_modules", "downloads"].includes(entry.name)) continue;
     const full = join(dir, entry.name);
     if (entry.isDirectory()) output.push(...walk(full)); else output.push(full);
   }

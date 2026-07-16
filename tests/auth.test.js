@@ -15,14 +15,12 @@ test("protected APIs only accept a Supabase bearer token", () => {
 
 test("contributor auth has no credential-bearing GET fallback or cookie proxy", () => {
   const form = readFileSync(join(__dirname, "..", "public", "contribute.html"), "utf8");
-  const client = readFileSync(join(__dirname, "..", "app-client.js"), "utf8");
-  const build = readFileSync(join(__dirname, "..", "scripts", "build-static.js"), "utf8");
+  const client = readFileSync(join(__dirname, "..", "public", "app-client.js"), "utf8");
   assert.match(form, /<form class="entry-auth-form" data-auth-form method="post">/);
-  assert.match(client, /createClient\(/);
+  assert.match(client, /createBrowserClient/);
   assert.doesNotMatch(client, /\/api\/auth/);
   assert.match(client, /auth\.getSession\(\)/);
   assert.doesNotMatch(client, /auth\.getUser\(\)/);
-  assert.match(build, /"pack-preview\.js"/);
 });
 
 test("administration is entered from the authenticated contributor workspace", () => {

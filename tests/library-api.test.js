@@ -97,10 +97,10 @@ test("downloads the selected pack directly from Storage", async () => {
 });
 
 test("the public library is separate from the contributor workspace", () => {
-  const exchange = readFileSync(join(__dirname, "..", "contribute.html"), "utf8");
-  const legacy = readFileSync(join(__dirname, "..", "library.html"), "utf8");
+  const exchange = readFileSync(join(__dirname, "..", "public", "contribute.html"), "utf8");
+  const legacy = readFileSync(join(__dirname, "..", "public", "library.html"), "utf8");
   const redirects = readFileSync(join(__dirname, "..", "vercel.json"), "utf8");
-  const section = readFileSync(join(__dirname, "..", "library-section.js"), "utf8");
+  const section = readFileSync(join(__dirname, "..", "public", "library-section.js"), "utf8");
   assert.doesNotMatch(exchange, /data-public-library/);
   assert.doesNotMatch(exchange, /id="library"/);
   assert.doesNotMatch(exchange, /data-moderation/);

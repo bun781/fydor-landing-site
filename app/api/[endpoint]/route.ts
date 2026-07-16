@@ -7,6 +7,7 @@ const require = createRequire(import.meta.url);
 const handlers: Record<string, (request: LegacyRequest, response: LegacyResponse) => Promise<void> | void> = {
   admin: require("../../../legacy-api/admin.js"), contributor: require("../../../legacy-api/contributor.js"),
   moderation: require("../../../legacy-api/moderation.js"), library: require("../../../legacy-api/library.js"),
+  "client-config": require("../../../legacy-api/client-config.js"),
   "download-count": require("../../../legacy-api/download-count.js"), packs: require("../../../legacy-api/packs.js")
 };
 

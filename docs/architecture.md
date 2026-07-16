@@ -18,15 +18,16 @@ name grants access.
 | `/api/contributor`, `/api/moderation` | authenticated | Contributor and moderation actions |
 | `/api/admin` | admin or super-admin | Privileged operations |
 
-`/index.html`, `/about.html`, and `/library.html` are retained redirects. The
-remaining `.html` workspace files are temporary compatibility assets; replace
-their client code before making them canonical App Router pages.
+`/index.html` and `/about.html` are retained redirects. The remaining `.html`
+workspace files are temporary compatibility assets. They use the same Supabase
+SSR browser-cookie session as the App Router routes, but remain scheduled for
+replacement by canonical App Router pages.
 
 ## Auth and authorization
 
 `lib/supabase/browser.ts` creates the browser client with only the publishable
 key. `lib/supabase/server.ts` creates a request-scoped SSR client. `proxy.ts`
-only refreshes session cookies; it does not decide administrator access.
+refreshes session cookies; it does not decide administrator access.
 
 `requireAdmin()` verifies the Supabase user then resolves active roles from the
 controlled `user_roles` and `roles` tables using server-only code. Every admin

@@ -2,21 +2,26 @@
 
 ## Boundary and deployment
 
-`fydor-website` is a standalone static Vercel site with Node serverless functions under `api/`. Supabase provides verified user identity and PostgreSQL persistence. The desktop application remains local-first and never receives the Supabase service-role credential.
+`fydor-website` is a Vercel-hosted Next.js App Router application. Supabase
+provides verified user identity and PostgreSQL persistence. The desktop
+application remains local-first and never receives the Supabase service-role
+credential. Static workspace files under `public/` are temporary compatibility
+assets served by the App Router deployment.
 
 Required server environment variables:
 
-- `FYDOR_WEB_ORIGIN` (or `NEXT_PUBLIC_FYDOR_WEB_ORIGIN` / `VITE_FYDOR_WEB_ORIGIN`): canonical website origin. HTTPS is mandatory except on localhost. Vercel preview deployments fall back to their trusted `VERCEL_URL`.
-- `SUPABASE_URL`
-- `SUPABASE_PUBLISHABLE_KEY` (or legacy `SUPABASE_ANON_KEY`, server only)
+- `NEXT_PUBLIC_SITE_URL`: canonical website origin. HTTPS is mandatory except on localhost. Vercel preview deployments fall back to their trusted `VERCEL_URL` for compatibility handlers.
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY` (server only)
 - `DATABASE_URL`: required only for Drizzle migration tooling; it is not used by
   `GET /api/library`. The public library reads validated `.fydorpack` files
   directly from the public `packs` Storage bucket using the server-only
   Supabase credential.
 
-The Vercel functions are Node.js functions (not Edge functions). This is
-required by the `postgres` database driver used by the library endpoint.
+The compatibility Route Handler runs on the Node.js runtime. The `postgres`
+driver is reserved for Drizzle and controlled bootstrap tooling; the public
+library uses Supabase Storage.
 
 Origin parsing, URL construction, preview-origin handling, and chatbot destinations are centralized in `lib/config.js`. Authenticated API CORS accepts only the configured website origin or the exact current Vercel preview origin; the read-only public library permits all origins so the Tauri app can browse it. No client-provided callback URL is accepted.
 
@@ -71,7 +76,7 @@ moderation model. `migrations/002_usernames.sql` adds username support and
 `migrations/003_pack_contribution_workflow.sql` adds the shared pack hash,
 creation-method, duplicate-warning, and publication-hash extensions.
 `migrations/004_native_rate_limits.sql` adds Supabase-native fixed-window rate
-limits and the download counter. Apply all four through the normal Supabase
+limits and the download counter. Apply all five through the normal Supabase
 migration runner in a test project first.
 
 The base migration creates:
@@ -102,14 +107,19 @@ Rollback is deliberately data-preserving: disable the new routes, archive public
 - `GET /api/library`: paginated public pack search/detail and direct `.fydorpack` download from Storage
 - `GET /api/client-config`: non-secret browser configuration and chatbot allowlist
 
-Requests have payload limits, structured errors, Supabase browser authentication, server-side bearer-token validation, fixed-window production rate limits, optimistic concurrency, and idempotency on submission/transitions. Authenticated mutations require same-origin request signals and a valid Supabase access token.
+Requests have payload limits, structured errors, Supabase browser authentication,
+server-side bearer-token validation, fixed-window production rate limits,
+optimistic concurrency, and idempotency on submission/transitions.
+Authenticated mutations require same-origin request signals and a valid
+Supabase access token. The static compatibility client uses the same Supabase
+SSR cookie session as the App Router auth pages.
 
 ## User interfaces
 
-- `/contribute.html` (Fydor Exchange): public published-lesson search/filter/download at the top, followed by prompt generation, chatbot launch, safe JSON import, draft resume, sentence review, preflight, immutable submission, and withdrawal/history
-- `/moderate.html`: queue/claim, immutable sentence inspection, version feedback, request changes, language approval/rejection, admin approval/publication/archive
-- `/admin.html`: verified-user search and moderator/language changes
-- `/library.html`: permanent redirect to the Exchange public-library section
+- `/contribute`, `/moderate`, and `/library` currently redirect to temporary
+  compatibility workspaces while their UI is migrated to App Router components.
+- `/admin` verifies the trusted server-side admin role before opening the
+  temporary administrative workspace.
 
 ## Desktop import flow
 

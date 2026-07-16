@@ -45,9 +45,14 @@ Pack publication is now only performed after authenticated contribution and
 moderation. The legacy `POST /api/packs` route returns a migration response and
 does not bypass review. Set:
 
-- `SUPABASE_URL`
-- `SUPABASE_PUBLISHABLE_KEY` or `SUPABASE_ANON_KEY`
-- `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY`
+- `NEXT_PUBLIC_SITE_URL`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
 - `SUPABASE_PACK_BUCKET` (defaults to `packs`)
+
+`DATABASE_URL` is required only for Drizzle commands and the controlled
+administrator-bootstrap script. Compatibility handlers still accept legacy
+Supabase variable names, but new deployment setup must use the names above.
 
 Environment-specific administrator-bootstrap instructions belong in the ignored `ADMIN_BOOTSTRAP.local.md` file.

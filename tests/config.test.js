@@ -43,6 +43,20 @@ test("accepts both current and legacy Supabase key names", () => {
   assert.equal(legacy.supabaseSecretKey, "service_local");
 });
 
+test("accepts the Next.js public Supabase and site variables for compatibility handlers", () => {
+  const result = assertServerConfig({
+    NEXT_PUBLIC_SITE_URL: "https://fydor.example",
+    NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co",
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_local",
+    SUPABASE_SERVICE_ROLE_KEY: "sb_secret_local"
+  });
+
+  assert.equal(result.origin, "https://fydor.example");
+  assert.equal(result.supabase, "https://project.supabase.co");
+  assert.equal(result.supabasePublishableKey, "sb_publishable_local");
+  assert.equal(result.supabaseSecretKey, "sb_secret_local");
+});
+
 test("production auth does not trust a localhost development origin", () => {
   assert.equal(configuredWebOrigin({ VERCEL_ENV: "production", FYDOR_WEB_ORIGIN: "http://localhost:8080" }), "https://fydor.vercel.app");
 });

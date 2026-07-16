@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createBrowserClient } from "https://esm.sh/@supabase/ssr@0.8.0";
 
 let configPromise;
 let supabasePromise;
@@ -13,9 +13,7 @@ export async function getSupabase() {
   if (!supabasePromise) {
     const config = await getConfig();
     if (!config.supabaseUrl || !config.supabasePublishableKey) throw new Error("Supabase is not configured.");
-    supabasePromise = createClient(config.supabaseUrl, config.supabasePublishableKey, {
-      auth: { autoRefreshToken: true, detectSessionInUrl: true, persistSession: true }
-    });
+    supabasePromise = createBrowserClient(config.supabaseUrl, config.supabasePublishableKey);
   }
   return supabasePromise;
 }
@@ -27,7 +25,11 @@ export async function signIn(email, password) {
 }
 
 export async function signUp(email, password, username) {
-  const { data, error } = await (await getSupabase()).auth.signUp({ email, password, options: { data: { username } } });
+  const { data, error } = await (await getSupabase()).auth.signUp({
+    email,
+    password,
+    options: { data: { username }, emailRedirectTo: `${location.origin}/auth/callback?next=/contribute` }
+  });
   if (error) throw error;
   return data.session?.user || null;
 }
