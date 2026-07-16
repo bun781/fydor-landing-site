@@ -1,9 +1,20 @@
 # Fydor pack contribution workflow
 
-The contributor workspace offers two methods: guided AI generation and upload of
-an existing `.json` Fydor pack. Both methods end in the same `api/contributor`
-submission flow, `contributor_drafts` record, immutable `submission_versions`
-snapshot, moderation queue, and approved publication path.
+The contributor workspace offers three separate creation methods:
+
+1. **Write your own:** use the pack editor to create lessons and sentences by hand.
+2. **Generate with an LLM:** fill in the lesson brief, create the versioned prompt, copy it into ChatGPT, Claude, or another LLM, then paste the returned Fydor Pack JSON back into the website. The result is validated and can be corrected in the normal editor before review.
+3. **Import Fydor JSON:** upload an existing `.json` or `.fydorpack` file.
+
+The LLM workflow is an optional drafting assistant, not a replacement for manual
+authoring or pack import. All three methods end in the same
+`api/contributor` submission flow, `contributor_drafts` record, immutable
+`submission_versions` snapshot, moderation queue, and approved publication path.
+
+Generated content must be reviewed by the contributor. The prompt requires one
+strict `fydor_pack` JSON object, translated sentences, exact annotation surfaces,
+plain text, and no extra fields. Fydor validates the returned JSON again before
+it can enter the editor or moderation flow.
 
 ## Canonical content and hashes
 

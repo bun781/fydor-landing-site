@@ -35,6 +35,7 @@ export function ContributeWorkspace() {
   const [message, setMessage] = useState("");
   const [serverIssues, setServerIssues] = useState<Array<{ path: string; message: string }>>([]);
   const [generationSource, setGenerationSource] = useState<GenerationSource>("manual");
+  const [creationMethod, setCreationMethod] = useState<"manual" | "upload" | "ai">("manual");
   const issues = useMemo(() => pack ? validatePackClient(pack) : [], [pack]);
 
   const loadDashboard = useCallback(async () => {
@@ -62,12 +63,12 @@ export function ContributeWorkspace() {
     if (pack) setReviews((current) => resetChangedReviews(pack, next, current));
     setPack(next); setDirty(true); setServerIssues([]);
   }
-  function startCreate() { setGenerationSource("manual"); setDraft(null); setPack(createBlankPack()); setReviews(new Map()); setDirty(true); setView("editor"); setMessage(""); }
+  function startCreate() { setGenerationSource("manual"); setCreationMethod("manual"); setDraft(null); setPack(createBlankPack()); setReviews(new Map()); setDirty(true); setView("editor"); setMessage(""); }
   async function importPack(text: string, source: GenerationSource = "manual") {
     setBusy(true);
     try {
       const result = await api<{ pack: Pack }>("/api/contributor", { method: "POST", body: { action: "validate_pack", pack: text } });
-      setGenerationSource(source); setDraft(null); setPack(result.pack); setReviews(new Map()); setDirty(true); setView("editor"); setMessage("Pack loaded. Save it as a draft, then use Review & submit to send it for moderation.");
+      setGenerationSource(source); setCreationMethod(source === "manual" ? "upload" : "ai"); setDraft(null); setPack(result.pack); setReviews(new Map()); setDirty(true); setView("editor"); setMessage("Pack loaded. Save it as a draft, then use Review & submit to send it for moderation.");
     } catch (error) { captureError(error, "Unable to import that pack."); }
     finally { setBusy(false); }
   }
@@ -107,7 +108,7 @@ export function ContributeWorkspace() {
     if (!draft || !pack || issues.length || [...approvedReviews.values()].filter((item) => item === "approved").length !== pack.lessons.reduce((total, lesson) => total + lesson.sentences.length, 0)) return;
     setBusy(true);
     try {
-      await api("/api/contributor", { method: "POST", idempotencyKey: `submit:${crypto.randomUUID()}`, body: { action: "submit_pack", pack, confirmed: true, generationSource, creationMethod: generationSource === "manual" ? "manual" : generationSource === "external" ? "ai" : "ai" } });
+      await api("/api/contributor", { method: "POST", idempotencyKey: `submit:${crypto.randomUUID()}`, body: { action: "submit_pack", pack, confirmed: true, generationSource, creationMethod } });
       setDirty(false); setMessage("Submitted for moderation. Your local working copy remains in this browser."); setView("dashboard"); await loadDashboard();
     } catch (error) { captureError(error, "Unable to submit this pack."); }
     finally { setBusy(false); }

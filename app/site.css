@@ -56,13 +56,14 @@ button, input, textarea, select { font: inherit; }
 
 main { margin: 0 auto; max-width: 1180px; padding: 48px clamp(18px, 5vw, 64px) 90px; }
 .site-header + main:has(.hero) { padding-top: 0; }
-.hero { align-items: center; display: grid; gap: 42px; grid-template-columns: minmax(0,.95fr) minmax(340px,1.05fr); min-height: calc(100vh - 69px); padding: 54px 0 42px; }
+.hero { align-items: center; display: grid; gap: 42px; grid-template-columns: minmax(0,.8fr) minmax(400px,1.2fr); min-height: calc(100vh - 69px); padding: 54px 0 42px; }
 .hero-copy { display: grid; gap: 18px; }
 .lede { font-size: clamp(18px, 2vw, 23px); line-height: 1.55; max-width: 650px; }
 .muted, .body-copy, .feature-list p { color: var(--muted); }
 .muted { font-size: 13px; }
 .release-note { max-width: 480px; }
-.hero-actions, .workspace-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.download-help-links { color: var(--accent); font-size: 13px; }
+.hero-actions, .workspace-actions, .download-help-links, .download-card-actions, .install-platform-switcher { display: flex; flex-wrap: wrap; gap: 10px; }
 .hero-actions { margin-top: 8px; }
 .text-link { color: var(--accent); font-size: 13px; font-weight: 650; width: fit-content; }
 .text-link span { display: inline-block; margin-left: 4px; transition: transform .15s; }
@@ -96,9 +97,14 @@ main { margin: 0 auto; max-width: 1180px; padding: 48px clamp(18px, 5vw, 64px) 9
 .platform-pill { align-items: center; background: var(--surface-muted); color: var(--ink); gap: 6px; }
 
 .screenshot-carousel { display: grid; gap: 12px; margin: 0; min-width: 0; }
-.screenshot-frame { aspect-ratio: 1.3; background: #e8e2d9; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 24px 70px rgba(28,25,23,.12); overflow: hidden; position: relative; }
+.screenshot-frame { aspect-ratio: 1.2; background: #e8e2d9; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 24px 70px rgba(28,25,23,.12); overflow: hidden; position: relative; }
 .screenshot-frame img { height: 100%; inset: 0; object-fit: cover; opacity: 0; position: absolute; transition: opacity .45s ease; width: 100%; }
 .screenshot-frame img.is-active { opacity: 1; }
+.screenshot-arrow { align-items: center; background: rgba(28,25,23,.8); border: 1px solid rgba(255,255,255,.7); border-radius: 50%; color: #fff; cursor: pointer; display: flex; font-size: 24px; height: 46px; justify-content: center; line-height: 1; opacity: .94; padding: 0; position: absolute; top: 50%; transform: translateY(-50%); transition: background .15s, transform .15s; width: 46px; z-index: 1; }
+.screenshot-arrow:hover { background: var(--ink); transform: translateY(-50%) scale(1.06); }
+.screenshot-arrow:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.screenshot-arrow.previous { left: 18px; }
+.screenshot-arrow.next { right: 18px; }
 .screenshot-carousel figcaption { align-items: center; color: var(--muted); display: flex; font-size: 11px; justify-content: space-between; letter-spacing: .04em; text-transform: uppercase; }
 .screenshot-controls { display: flex; gap: 6px; }
 .screenshot-controls button { background: #d6d0c7; border: 0; border-radius: 50%; cursor: pointer; height: 7px; padding: 0; transition: background .15s, transform .15s; width: 7px; }
@@ -116,6 +122,16 @@ main { margin: 0 auto; max-width: 1180px; padding: 48px clamp(18px, 5vw, 64px) 9
 .download-card strong { font-family: Georgia, "Times New Roman", serif; font-size: 26px; font-weight: 400; line-height: 1.15; }
 .download-card > span:last-child { color: var(--muted); }
 .download-card:hover { border-color: rgba(28,25,23,.42); box-shadow: inset 3px 0 0 var(--ink), 0 0 0 6px rgba(181,154,106,.14); transform: translateY(-1px); }
+.download-card-actions { align-items: center; margin-top: auto; }
+.install-guide { display: grid; gap: 28px; max-width: 880px; }
+.install-platform-switcher button { background: transparent; border: 1px solid var(--line); border-radius: 2px; color: var(--ink); cursor: pointer; min-height: 38px; padding: 0 14px; }
+.install-platform-switcher button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.install-steps { counter-reset: install-step; display: grid; gap: 12px; margin: 0; padding: 0; }
+.install-steps li { background: var(--surface); border: 1px solid var(--line); list-style: none; padding: 18px 18px 18px 58px; position: relative; }
+.install-steps li::before { align-items: center; background: var(--surface-muted); border: 1px solid var(--line); border-radius: 50%; content: counter(install-step); counter-increment: install-step; display: flex; height: 26px; justify-content: center; left: 18px; position: absolute; top: 18px; width: 26px; }
+.install-command { align-items: center; background: #24211e; color: #f8f7f4; display: flex; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; gap: 12px; justify-content: space-between; overflow-wrap: anywhere; padding: 14px; }
+.install-command button { background: transparent; border: 1px solid rgba(255,255,255,.5); color: #fff; cursor: pointer; flex: 0 0 auto; padding: 5px 8px; }
+.install-warning { background: #fff6ed; border-left: 3px solid #c46935; color: #78350f; padding: 14px; }
 .install-notes { display: grid; gap: 28px; grid-template-columns: minmax(0,.8fr) minmax(0,1.2fr); }
 
 .footer { border-top: 1px solid var(--line); color: var(--muted); display: flex; flex-wrap: wrap; font-size: 12px; gap: 12px; justify-content: space-between; margin: 0 auto; max-width: 1180px; padding: 24px clamp(18px,5vw,64px) 36px; }
@@ -192,6 +208,9 @@ main { margin: 0 auto; max-width: 1180px; padding: 48px clamp(18px, 5vw, 64px) 9
   .nav-account { border: 0; padding-left: 0; }
   .hero-actions, .hero-actions .button { width: 100%; }
   .screenshot-carousel figcaption { align-items: flex-start; gap: 10px; }
+  .screenshot-arrow { height: 40px; width: 40px; }
+  .screenshot-arrow.previous { left: 12px; }
+  .screenshot-arrow.next { right: 12px; }
   .workspace-header { display: grid; }
   .workspace-actions .button { flex: 1 1 100%; }
 }

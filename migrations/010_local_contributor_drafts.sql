@@ -17,7 +17,7 @@ create or replace function public.submit_pack(
 language plpgsql security definer set search_path = public as $$
 declare s submissions; existing jsonb; pack_title text; target text; base text;
 begin
-  if coalesce(current_setting('request.jwt.claim.role', true),'') <> 'service_role' then raise exception 'service role required'; end if;
+  if not public.is_service_role() then raise exception 'service role required'; end if;
   if not has_role(p_actor,'contributor') then raise exception 'contributor role required'; end if;
   if not p_confirmed then raise exception 'creator confirmation required'; end if;
   if exists(select 1 from profiles where id=p_actor and publishing_suspended_at is not null) then raise exception 'publishing access is suspended'; end if;
@@ -43,7 +43,7 @@ create or replace function public.transition_submission(p_actor uuid,p_submissio
 language plpgsql security definer set search_path = public as $$
 declare s submissions; roles_now text[]; permitted boolean:=false; pub_id uuid; snapshot jsonb; checksum text; previous_state text; next_state text:=p_next;
 begin
-  if coalesce(current_setting('request.jwt.claim.role', true),'') <> 'service_role' then raise exception 'service role required'; end if; roles_now:=active_roles(p_actor); select * into s from submissions where id=p_submission for update; if s.id is null then raise exception 'submission not found'; end if; previous_state:=s.state;
+  if not public.is_service_role() then raise exception 'service role required'; end if; roles_now:=active_roles(p_actor); select * into s from submissions where id=p_submission for update; if s.id is null then raise exception 'submission not found'; end if; previous_state:=s.state;
   if exists(select 1 from audit_events where action_id=p_action_id) then return jsonb_build_object('submissionId',s.id,'version',s.current_version,'state',s.state,'rowVersion',s.row_version); end if;
   if s.current_version<>p_expected_version or s.row_version<>p_expected_row_version then raise exception 'stale submission version'; end if;
   if p_next='restore' then if s.state<>'archived' then raise exception 'invalid submission transition'; end if; next_state:=coalesce(s.archived_from_state,'approved'); end if;

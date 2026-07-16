@@ -1,6 +1,18 @@
 {
   "framework": "nextjs",
   "buildCommand": "npm run build",
+  "redirects": [
+    {
+      "source": "/downloads/fydor-mac.dmg",
+      "destination": "https://github.com/bun781/Triolinga/releases/latest/download/fydor-mac.dmg",
+      "permanent": false
+    },
+    {
+      "source": "/downloads/fydor-windows.exe",
+      "destination": "https://github.com/bun781/Triolinga/releases/latest/download/fydor-windows.exe",
+      "permanent": false
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

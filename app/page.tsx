@@ -28,12 +28,16 @@ export default function Home() {
               and reviewing what matters with calm spaced repetition.
             </p>
             <div className="hero-actions" id="download">
-              <a className="button" href="/downloads/fydor-windows.exe" download>
+              <a className="button" href="/downloads/fydor-windows.exe">
                 <WindowsIcon /> Download for Windows
               </a>
-              <a className="button secondary" href="/downloads/fydor-mac.dmg" download>
+              <a className="button secondary" href="/downloads/fydor-mac.dmg">
                 <AppleIcon /> Download for Mac
               </a>
+            </div>
+            <div className="download-help-links" aria-label="Install help">
+              <Link href="/install?platform=windows">Open Windows install help</Link>
+              <Link href="/install?platform=mac">Open Mac install help</Link>
             </div>
             <p className="muted release-note">
               Fresh desktop builds are published here for Windows and macOS. Your lessons and review
@@ -57,16 +61,18 @@ export default function Home() {
         <section className="section download-panel" aria-labelledby="download-title">
           <div><span className="eyebrow">Desktop</span><h2 id="download-title">Download Fydor</h2><p className="muted">Choose the installer for your computer.</p></div>
           <div className="download-grid">
-            <a className="download-card" href="/downloads/fydor-windows.exe" download>
+            <article className="download-card">
               <span className="pill platform-pill"><WindowsIcon /> Windows</span>
               <strong>Fydor for Windows</strong>
               <span>Install the current desktop release and keep your study library local.</span>
-            </a>
-            <a className="download-card" href="/downloads/fydor-mac.dmg" download>
+              <div className="download-card-actions"><a className="button" href="/downloads/fydor-windows.exe">Download</a><Link className="text-link" href="/install?platform=windows">Open after download</Link></div>
+            </article>
+            <article className="download-card">
               <span className="pill platform-pill"><AppleIcon /> macOS</span>
               <strong>Fydor for Mac</strong>
               <span>Open the disk image, then drag Fydor into Applications.</span>
-            </a>
+              <div className="download-card-actions"><a className="button" href="/downloads/fydor-mac.dmg">Download</a><Link className="text-link" href="/install?platform=mac">Open after download</Link></div>
+            </article>
           </div>
         </section>
 
@@ -81,6 +87,7 @@ export default function Home() {
             <article><h3>Open it safely</h3><p>Control-click Fydor in Finder and choose <strong>Open</strong>.</p></article>
             <article><h3>If macOS still warns</h3><p>Open <strong>System Settings → Privacy &amp; Security</strong> and choose <strong>Open Anyway</strong>.</p></article>
           </div>
+          <Link className="text-link" href="/install?platform=mac">Full install help <span aria-hidden="true">→</span></Link>
         </section>
       </main>
       <SiteFooter />
