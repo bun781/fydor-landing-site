@@ -7,7 +7,7 @@ import { api } from "@/lib/website-api";
 type RoleRow = { version: number; suspended_at: string | null; expires_at: string | null; roles?: { name?: string } };
 type User = { id: string; email: string; display_name: string | null; verified_at: string | null; publishing_suspended_at: string | null; protected_administrator: boolean; user_roles?: RoleRow[] };
 type Submission = { id: string; title: string; target_language: string; base_language: string; state: string; current_version: number; created_at: string; lesson_count: number; sentence_count: number; level: string; possible_duplicate?: boolean; validation_warnings: Array<{ path: string; message: string }>; moderation_history_count: number; contributor?: { email: string; display_name: string | null } };
-type Pack = { submission_id: string; title: string; target_language: string; base_language: string; level: string; published_at: string; archived_at: string | null; submissions?: { state: string } };
+type Pack = { submission_id: string; title: string; target_language: string; base_language: string; level: string; published_at: string; archived_at: string | null; submissions?: { state: string; row_version: number } };
 type AuditEvent = { id: string; event_type?: string; action?: string; actor?: { email: string }; target?: { email: string }; target_title?: string; previous_state?: string | null; next_state?: string | null; reason?: string | null; created_at: string; submission_version?: number | null };
 
 export function AdminWorkspace({ section = "moderation" }: { section?: string }) {
@@ -52,7 +52,21 @@ function Packs({ includeArchived }: { includeArchived: boolean }) {
   const load = useCallback(async () => { try { const data = await api<{ packs: Pack[] }>("/api/admin?action=packs"); setPacks(includeArchived ? data.packs : data.packs.filter((pack) => !pack.archived_at)); setStatus(""); } catch (error) { setStatus(message(error)); } }, [includeArchived]);
   useEffect(() => { void load(); }, [load]);
   async function archive(pack: Pack) { const reason = window.prompt("Reason for archiving and removing this public pack:"); if (!reason || !window.confirm(`Remove “${pack.title}” from Fydor Exchange?`)) return; try { await api("/api/admin", { method: "POST", body: { action: "delete_pack", submissionId: pack.submission_id, reason } }); await load(); } catch (error) { setStatus(message(error)); } }
-  return <section className="workspace-card admin-panel"><div className="workspace-header"><div><span className="eyebrow">Platform library</span><h1>{includeArchived ? "Pack management" : "Published packs"}</h1></div><button className="button secondary" onClick={() => void load()}>Refresh</button></div>{status && <p className="admin-alert" role="status">{status}</p>}<div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Pack</th><th>Languages</th><th>Level</th><th>Published</th><th>State</th><th /></tr></thead><tbody>{packs.map((pack) => <tr key={pack.submission_id}><td><Link className="text-link" href={`/admin/submissions/${pack.submission_id}`}>{pack.title}</Link></td><td>{pack.target_language} → {pack.base_language}</td><td>{pack.level}</td><td>{formatDate(pack.published_at)}</td><td>{pack.archived_at ? "Archived" : pack.submissions?.state || "Published"}</td><td>{!pack.archived_at && <button className="button danger" onClick={() => void archive(pack)}>Archive</button>}</td></tr>)}</tbody></table></div></section>;
+  const replacementDeletes = deletableReplacementPacks(packs);
+  async function permanentlyDeleteReplacements() {
+    if (!replacementDeletes.length) return;
+    const reason = window.prompt("Reason for permanently deleting these legacy published packs:");
+    if (!reason) return;
+    const phrase = `DELETE ${replacementDeletes.length} PACKS`;
+    if (window.prompt(`Type “${phrase}” to permanently delete the selected pack records and their public files:`) !== phrase) return;
+    try {
+      for (const pack of replacementDeletes) {
+        await api("/api/admin", { method: "POST", body: { action: "hard_delete_pack", submissionId: pack.submission_id, expectedRowVersion: pack.submissions?.row_version, reason, actionId: `pack-hard-delete:${crypto.randomUUID()}` } });
+      }
+      await load(); setStatus(`Permanently deleted ${replacementDeletes.length} published pack record(s).`);
+    } catch (error) { setStatus(message(error)); }
+  }
+  return <section className="workspace-card admin-panel"><div className="workspace-header"><div><span className="eyebrow">Platform library</span><h1>{includeArchived ? "Pack management" : "Published packs"}</h1><p>{replacementDeletes.length ? `${replacementDeletes.length} legacy publication(s) are queued for permanent replacement cleanup. The oldest Korean publication is protected.` : "No title-matched replacement cleanup is pending."}</p></div><div className="workspace-actions"><button className="button danger" disabled={!replacementDeletes.length} onClick={() => void permanentlyDeleteReplacements()}>Permanently delete replacement set</button><button className="button secondary" onClick={() => void load()}>Refresh</button></div></div>{status && <p className="admin-alert" role="status">{status}</p>}<div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Pack</th><th>Languages</th><th>Level</th><th>Published</th><th>State</th><th /></tr></thead><tbody>{packs.map((pack) => <tr key={pack.submission_id}><td><Link className="text-link" href={`/admin/submissions/${pack.submission_id}`}>{pack.title}</Link>{isProtectedKorean(pack, packs) && <small>Oldest Korean publication — retained</small>}</td><td>{pack.target_language} → {pack.base_language}</td><td>{pack.level}</td><td>{formatDate(pack.published_at)}</td><td>{pack.archived_at ? "Archived" : pack.submissions?.state || "Published"}</td><td>{!pack.archived_at && <button className="button danger" onClick={() => void archive(pack)}>Archive</button>}</td></tr>)}</tbody></table></div></section>;
 }
 
 function History() {
@@ -68,3 +82,19 @@ function promptLanguages() { return (window.prompt("Target language codes for th
 function formatDate(value: string) { return value ? new Date(value).toLocaleString() : "—"; }
 function label(value: string) { return value.replaceAll("_", " "); }
 function message(error: unknown) { return error instanceof Error ? error.message : "The request could not be completed."; }
+
+const REPLACEMENT_TITLES = new Set([
+  "German for Beginners: A0 to A2",
+  "Korean Beginner Megapack: A0 to A2",
+  "Spanish for Beginners: A0 to A2 Complete Course",
+  "Humongous Mandarin: Daily Life, Work & School",
+  "Humongous Vietnamese: Daily Life, Work & School"
+]);
+const KOREAN_TITLE = "Korean Beginner Megapack: A0 to A2";
+function isProtectedKorean(pack: Pack, all: Pack[]) {
+  if (pack.title !== KOREAN_TITLE || pack.archived_at) return false;
+  return [...all].filter((candidate) => candidate.title === KOREAN_TITLE && !candidate.archived_at).sort((a, b) => Date.parse(a.published_at) - Date.parse(b.published_at))[0]?.submission_id === pack.submission_id;
+}
+function deletableReplacementPacks(packs: Pack[]) {
+  return packs.filter((pack) => !pack.archived_at && REPLACEMENT_TITLES.has(pack.title) && !isProtectedKorean(pack, packs));
+}

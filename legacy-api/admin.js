@@ -32,7 +32,7 @@ module.exports = async function handler(request, response) {
         return send(response, 200, { moderators: rows });
       }
       if (action === "packs") {
-        const rows = await db("published_lessons?select=id,submission_id,published_version,title,target_language,base_language,level,published_at,updated_at,archived_at,submissions(state,current_version,row_version)&order=published_at.desc&limit=200");
+        const rows = await db("published_lessons?select=id,submission_id,published_version,title,target_language,base_language,level,published_at,updated_at,archived_at,submissions(state,current_version,row_version)&order=published_at.asc&limit=200");
         return send(response, 200, { packs: rows });
       }
       if (action === "permissions") {
@@ -78,6 +78,10 @@ module.exports = async function handler(request, response) {
       const pack = await archiveAndDeletePack(actor, body);
       return send(response, 200, { pack });
     }
+    if (body.action === "hard_delete_pack") {
+      const pack = await permanentlyDeletePack(actor, body);
+      return send(response, 200, { pack });
+    }
     throw httpError(400, "invalid_action", "Unsupported administration action.");
   } catch (error) {
     console.error("admin request failed", { code: error?.code, status: error?.status }); sendError(response, error);
@@ -105,7 +109,36 @@ async function archiveAndDeletePack(actor, body) {
   return { submissionId, state: result.state, objectDeleted: true };
 }
 
+async function permanentlyDeletePack(actor, body) {
+  const submissionId = uuid(body.submissionId);
+  const reason = requiredReason(body.reason);
+  const expectedRowVersion = Number(body.expectedRowVersion);
+  if (!Number.isInteger(expectedRowVersion) || expectedRowVersion < 1) throw httpError(400, "invalid_version", "A current pack version is required.");
+  const actionId = actionIdValue(body.actionId);
+  const prior = await db(`audit_events?select=entity_id,event_type&action_id=eq.${encodeURIComponent(actionId)}&limit=1`);
+  if (prior[0]?.event_type === "submission_permanently_deleted") {
+    return { submissionId: prior[0].entity_id, deleted: true, idempotent: true };
+  }
+  const published = await db(`published_lessons?select=submission_id,published_version,submissions(state,current_version,row_version)&submission_id=eq.${submissionId}&archived_at=is.null&limit=1`);
+  const record = published[0];
+  const submission = record?.submissions;
+  if (!record || !submission || submission.state !== "published") throw httpError(409, "not_published", "This pack is not currently published.");
+  if (submission.row_version !== expectedRowVersion) throw httpError(409, "stale_submission", "This pack changed; refresh the list before deleting it.");
+  const version = await db(`submission_versions?select=canonical_json&submission_id=eq.${submissionId}&version=eq.${record.published_version}&limit=1`);
+  if (!version[0]) throw httpError(404, "not_found", "The published pack version was not found.");
+  const validated = parseAndValidatePack(version[0].canonical_json);
+  const pack = validated.pack;
+  const path = `${segment(pack.language)}/${segment(pack.baseLanguage)}/${segment(pack.id)}/${segment(pack.version)}/${slugifyPackTitle(pack.title)}.fydorpack`;
+  await deletePackObject(path);
+  const result = await rpc("hard_delete_submission", {
+    p_actor: actor.id, p_submission: submissionId, p_expected_row_version: expectedRowVersion,
+    p_reason: reason, p_action_id: actionId
+  });
+  return { submissionId, title: pack.title, storagePath: path, ...result };
+}
+
 function uuid(value){const text=String(value||"");if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(text))throw httpError(400,"invalid_id","Invalid identifier.");return text;}
+function actionIdValue(value){const text=String(value||"").trim();if(!/^[A-Za-z0-9._:-]{16,160}$/.test(text))throw httpError(400,"invalid_action_id","A valid deletion action ID is required.");return text;}
 function requiredReason(value){const text=String(value||"").normalize("NFC").trim();if(!text)throw httpError(400,"reason_required","A reason is required.");return text.slice(0,4000);}
 function segment(value) { return String(value || "").toLowerCase().trim().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "unknown"; }
 async function profilesById(ids) { const unique=[...new Set(ids.filter(Boolean))]; if(!unique.length)return new Map(); const rows=await db(`profiles?select=id,email,display_name&id=in.(${unique.join(",")})`); return new Map(rows.map((row)=>[row.id,row])); }

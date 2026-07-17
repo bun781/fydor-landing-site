@@ -39,11 +39,26 @@ test("pack contributions have one globally unique active hash registry and publi
   assert.match(packMigration, /sync_contribution_hash_state/);
 });
 
-test("admin pack deletion archives the publication before deleting its public object", () => {
+test("legacy archive remains available while permanent deletion is server-side, authorized, and storage-first", () => {
   const admin = readFileSync(join(__dirname, "..", "legacy-api", "admin.js"), "utf8");
   assert.match(admin, /body\.action === "delete_pack"/);
   assert.match(admin, /p_next: "archived"/);
+  assert.match(admin, /body\.action === "hard_delete_pack"/);
   assert.match(admin, /await deletePackObject\(path\)/);
+  assert.match(admin, /rpc\("hard_delete_submission"/);
+  assert.match(admin, /actionIdValue/);
+});
+
+test("permanent deletion is an admin-only, idempotent transactional database operation", () => {
+  const hardDelete = readFileSync(join(__dirname, "..", "migrations", "011_permanent_pack_deletion.sql"), "utf8");
+  assert.match(hardDelete, /not public\.is_service_role\(\)/);
+  assert.match(hardDelete, /'admin'=any\(roles_now\).*'super_admin'=any\(roles_now\)/s);
+  assert.match(hardDelete, /audit_events where action_id=p_action_id/);
+  for (const table of ["published_lessons", "reviewer_feedback", "moderation_assignments", "contribution_content_hashes", "submission_versions", "submissions"]) {
+    assert.match(hardDelete, new RegExp(`delete from ${table}`, "i"));
+  }
+  assert.match(hardDelete, /submission_permanently_deleted/);
+  assert.match(hardDelete, /revoke execute on function public\.hard_delete_submission/);
 });
 
 function functionBlock(name) {
