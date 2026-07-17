@@ -12,9 +12,24 @@ type AuditEvent = { id: string; event_type?: string; action?: string; actor?: { 
 
 export function AdminWorkspace({ section = "moderation" }: { section?: string }) {
   if (["moderation", "rejected", "archived"].includes(section)) return <Queue section={section} />;
+  if (section === "applications") return <ContributorApplications />;
   if (["users", "contributors"].includes(section)) return <Users contributorsOnly={section === "contributors"} />;
   if (["published", "packs"].includes(section)) return <Packs includeArchived={section === "packs"} />;
   return <History />;
+}
+
+type ContributorApplication = { id: string; target_languages: string[]; experience: string; sample_plan: string; state: "pending" | "approved" | "rejected"; reviewer_note: string | null; submitted_at: string; profiles?: { id: string; email: string; display_name: string | null; verified_at: string | null } };
+function ContributorApplications() {
+  const [items, setItems] = useState<ContributorApplication[]>([]); const [status, setStatus] = useState(""); const [loading, setLoading] = useState(true);
+  const load = useCallback(async () => { setLoading(true); try { const data = await api<{ applications: ContributorApplication[] }>("/api/admin?action=contributor_applications"); setItems(data.applications); setStatus(""); } catch (error) { setStatus(message(error)); } finally { setLoading(false); } }, []);
+  useEffect(() => { void load(); }, [load]);
+  async function decide(item: ContributorApplication, approved: boolean) {
+    const note = window.prompt(approved ? "Approval note (include the 30-day probation expectations):" : "Explain what the applicant should improve:");
+    if (!note || !window.confirm(`${approved ? "Approve" : "Decline"} this contributor application?`)) return;
+    try { await api("/api/admin", { method: "POST", body: { action: "review_contributor_application", applicationId: item.id, approved, note } }); await load(); }
+    catch (error) { setStatus(message(error)); }
+  }
+  return <section className="workspace-card admin-panel"><div className="workspace-header"><div><span className="eyebrow">Access control</span><h1>Contributor applications</h1><p>Approve applicants who can responsibly create lessons. Approval grants contributor access with a 30-day probation: two packs per day, up to 1 MB each.</p></div><button className="button secondary" onClick={() => void load()}>Refresh</button></div>{status && <p className="admin-alert" role="status">{status}</p>}{loading ? <p>Loading…</p> : <div className="card-list">{items.length ? items.map((item) => <article className="sentence-review application-review" key={item.id}><div className="workspace-header"><div><strong>{item.profiles?.display_name || item.profiles?.email || "Unknown applicant"}</strong><p>{item.profiles?.email} · {item.profiles?.verified_at ? "verified" : "unverified"} · applied {formatDate(item.submitted_at)}</p></div><span className="pill">{item.state}</span></div><p><strong>Languages:</strong> {item.target_languages.join(", ")}</p><p><strong>Experience:</strong> {item.experience}</p><p><strong>First pack:</strong> {item.sample_plan}</p><div className="workspace-actions"><button className="button" onClick={() => void decide(item, true)}>Approve with probation</button><button className="button danger" onClick={() => void decide(item, false)}>Request revision</button></div></article>) : <p>No pending contributor applications.</p>}</div>}</section>;
 }
 
 function Queue({ section }: { section: string }) {

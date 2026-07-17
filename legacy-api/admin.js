@@ -27,6 +27,12 @@ module.exports = async function handler(request, response) {
         for (const row of rows) row.protected_administrator = protectedIds.has(row.id);
         return send(response, 200, { users: rows });
       }
+      if (action === "contributor_applications") {
+        const state = String(request.query?.state || "pending");
+        if (!['pending', 'approved', 'rejected'].includes(state)) throw httpError(400, "invalid_state", "Unsupported application state.");
+        const rows = await db(`contributor_applications?select=id,target_languages,experience,sample_plan,state,reviewer_note,submitted_at,reviewed_at,profiles!contributor_applications_applicant_id_fkey(id,email,display_name,verified_at)&state=eq.${state}&order=submitted_at.asc&limit=100`);
+        return send(response, 200, { applications: rows });
+      }
       if (action === "moderators") {
         const rows = await db("moderator_language_assignments?select=*,profiles!moderator_language_assignments_moderator_id_fkey(email,display_name),moderation_assignments(id,state)&order=assigned_at.desc");
         return send(response, 200, { moderators: rows });
@@ -66,6 +72,13 @@ module.exports = async function handler(request, response) {
         p_reason: requiredReason(body.reason)
       });
       return send(response, 200, { contributor: result });
+    }
+    if (body.action === "review_contributor_application") {
+      const result = await rpc("review_contributor_application", {
+        p_actor: actor.id, p_application: uuid(body.applicationId),
+        p_approved: body.approved === true, p_note: requiredReason(body.note)
+      });
+      return send(response, 200, { application: result });
     }
     if (body.action === "suspend_publishing") {
       const result = await rpc("set_publishing_suspension", {

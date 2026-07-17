@@ -5,6 +5,7 @@ const links = [
   ["Published packs", "/admin/published"],
   ["Rejected", "/admin/rejected"],
   ["Archived", "/admin/archived"],
+  ["Applications", "/admin/applications"],
   ["Contributors", "/admin/contributors"],
   ["Users & roles", "/admin/users"],
   ["Moderation history", "/admin/history"],

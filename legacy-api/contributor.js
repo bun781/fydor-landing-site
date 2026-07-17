@@ -35,6 +35,11 @@ async function handleGet(request, response, actor) {
   const action = String(request.query?.action || "drafts");
   if (["drafts", "draft", "preflight"].includes(action)) throw httpError(410, "local_drafts", "Contributor drafts are stored in this browser.");
   if (action === "me") return send(response, 200, { actor: { id: actor.id, roles: actor.roles } });
+  if (action === "application") {
+    const applications = await db(`contributor_applications?select=id,target_languages,experience,sample_plan,state,reviewer_note,submitted_at,reviewed_at,profiles!contributor_applications_applicant_id_fkey(contributor_probation_until)&applicant_id=eq.${actor.id}&limit=1`);
+    const application = applications[0] || null;
+    return send(response, 200, { application: application && { ...application, probation_until: application.profiles?.contributor_probation_until || null } });
+  }
   if (action === "drafts") {
     const rows = await db(`contributor_drafts?select=id,state,title,target_language,base_language,level,content_hash,schema_version,generation_source,prompt_template_version,revision,created_at,updated_at&owner_id=eq.${actor.id}&order=updated_at.desc&limit=100`);
     return send(response, 200, { drafts: rows });
@@ -93,6 +98,14 @@ async function handlePost(request, response, actor, body) {
   if (action === "prompt") {
     requireRole(actor, ["user", "contributor", "admin", "super_admin"]);
     return send(response, 200, buildLessonPrompt(body.input || {}));
+  }
+  if (action === "apply_for_contributor") {
+    const languages = Array.isArray(body.targetLanguages) ? [...new Set(body.targetLanguages.map((value) => String(value).trim().toLowerCase()).filter((value) => /^[a-z]{2,3}$/.test(value)))].slice(0, 12) : [];
+    const application = await rpc("apply_for_contributor", {
+      p_actor: actor.id, p_target_languages: languages,
+      p_experience: requiredText(body.experience, 3000), p_sample_plan: requiredText(body.samplePlan, 3000)
+    });
+    return send(response, 201, { application });
   }
   if (action === "validate" || action === "validate_pack") {
     const result = validateContributionPack(body.pack ?? body.lesson ?? body);
@@ -288,6 +301,12 @@ function wrapLegacyLesson(lesson) {
 function packSentences(pack) {
   if (Array.isArray(pack?.lessons)) return pack.lessons.flatMap((lesson) => lesson.sentences || []);
   return Array.isArray(pack?.sentences) ? pack.sentences : [];
+}
+
+function requiredText(value, max) {
+  const text = String(value || "").normalize("NFC").trim();
+  if (text.length < 40 || text.length > max) throw httpError(400, "invalid_application", `Please provide between 40 and ${max} characters.`);
+  return text;
 }
 
 async function findSubmissionDuplicate(draft) {

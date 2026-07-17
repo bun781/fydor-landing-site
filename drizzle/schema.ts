@@ -26,9 +26,24 @@ export const profiles = pgTable("profiles", {
   active: boolean("active").notNull().default(true),
   verifiedAt: timestamp("verified_at", { withTimezone: true }),
   publishingSuspendedAt: timestamp("publishing_suspended_at", { withTimezone: true }),
+  contributorProbationUntil: timestamp("contributor_probation_until", { withTimezone: true }),
   createdAt: createdAt(),
   updatedAt: updatedAt()
 });
+
+export const contributorApplications = pgTable("contributor_applications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  applicantId: uuid("applicant_id").notNull().unique().references(() => profiles.id, { onDelete: "cascade" }),
+  targetLanguages: text("target_languages").array().notNull(),
+  experience: text("experience").notNull(),
+  samplePlan: text("sample_plan").notNull(),
+  state: text("state").notNull().default("pending"),
+  reviewerNote: text("reviewer_note"),
+  reviewedBy: uuid("reviewed_by").references(() => profiles.id, { onDelete: "set null" }),
+  submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  updatedAt: updatedAt()
+}, (table) => [index("contributor_applications_queue_idx").on(table.state, table.submittedAt)]);
 
 export const protectedAdministrators = pgTable("protected_administrators", {
   userId: uuid("user_id").primaryKey().references(() => profiles.id, { onDelete: "restrict" }),

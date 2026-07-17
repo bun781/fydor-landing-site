@@ -7,6 +7,7 @@ import { LlmGenerator, type GenerationSource } from "@/components/contributor/ll
 import { PackEditor } from "@/components/contributor/pack-editor";
 import { PackPreview } from "@/components/contributor/pack-preview";
 import { SentenceReview } from "@/components/contributor/sentence-review";
+import { ContributorApplicationGate, ProbationGuide, type ContributorApplication } from "@/components/contributor/contributor-application";
 import { SubmissionStatus, type Feedback, type SubmissionDetail, type SubmissionVersion } from "@/components/contributor/submission-status";
 import {
   createBlankPack, parsePackClient, resetChangedReviews, reviewStatus, validatePackClient,
@@ -24,6 +25,8 @@ export function ContributeWorkspace() {
   const [view, setView] = useState<View>("dashboard");
   const [drafts, setDrafts] = useState<DraftSummary[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [application, setApplication] = useState<ContributorApplication | null>(null);
+  const [isContributor, setIsContributor] = useState(false);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [pack, setPack] = useState<Pack | null>(null);
   const [reviews, setReviews] = useState<Map<number, ReviewStatus>>(new Map());
@@ -41,8 +44,13 @@ export function ContributeWorkspace() {
   const loadDashboard = useCallback(async () => {
     setBusy(true);
     try {
-      const submissionResult = await api<{ submissions: Submission[] }>("/api/contributor?action=submissions");
+      const [submissionResult, applicationResult, meResult] = await Promise.all([
+        api<{ submissions: Submission[] }>("/api/contributor?action=submissions"),
+        api<{ application: ContributorApplication | null }>("/api/contributor?action=application"),
+        api<{ actor: { roles: string[] } }>("/api/contributor?action=me")
+      ]);
       setDrafts(listLocalDrafts()); setSubmissions(submissionResult.submissions); setMessage("");
+      setApplication(applicationResult.application); setIsContributor(meResult.actor.roles.includes("contributor"));
     } catch (error) { setMessage(errorMessage(error, "Unable to load your packs.")); }
     finally { setBusy(false); }
   }, []);
@@ -120,6 +128,15 @@ export function ContributeWorkspace() {
     setReviews(next); saveLocalDraft({ draft, pack, reviews: next, state: "reviewing" });
     await submit(next);
   }
+  async function applyForContributor(value: { targetLanguages: string[]; experience: string; samplePlan: string }) {
+    setBusy(true);
+    try {
+      await api("/api/contributor", { method: "POST", body: { action: "apply_for_contributor", ...value } });
+      setMessage("Application sent. You can prepare packs locally while an administrator reviews it.");
+      await loadDashboard();
+    } catch (error) { captureError(error, "Unable to send your contributor application."); }
+    finally { setBusy(false); }
+  }
   async function duplicateDraft(id: string) {
     setBusy(true);
     try { const result = duplicateLocalDraft(id); if (!result) throw new Error("This local draft is no longer available."); await loadDashboard(); await openDraft(result.id); setMessage("Draft duplicated."); }
@@ -155,7 +172,10 @@ export function ContributeWorkspace() {
   return <>
     {message ? <div className="workspace-message" role="status">{message}</div> : null}
     {serverIssues.length ? <div className="workspace-errors" role="alert"><strong>Fix these issues</strong><ul>{serverIssues.slice(0, 12).map((issue) => <li key={`${issue.path}:${issue.message}`}><code>{issue.path}</code> {issue.message}</li>)}</ul></div> : null}
-    {view === "dashboard" ? <ContributorDashboard drafts={drafts} submissions={submissions} loading={busy} onCreate={startCreate} onGenerate={() => { setMessage(""); setView("llm"); }} onImport={(text) => void importPack(text, "manual")} onOpen={(id) => void openDraft(id)} onDuplicate={(id) => void duplicateDraft(id)} onDelete={(id) => void deleteDraft(id)} onSubmission={(id) => void openSubmission(id)} onRefresh={() => void loadDashboard()} /> : null}
+    {!isContributor ? <ContributorApplicationGate application={application} submitting={busy} onSubmit={applyForContributor} /> : <>
+      <ProbationGuide until={application?.probation_until} />
+      {view === "dashboard" ? <ContributorDashboard drafts={drafts} submissions={submissions} loading={busy} onCreate={startCreate} onGenerate={() => { setMessage(""); setView("llm"); }} onImport={(text) => void importPack(text, "manual")} onOpen={(id) => void openDraft(id)} onDuplicate={(id) => void duplicateDraft(id)} onDelete={(id) => void deleteDraft(id)} onSubmission={(id) => void openSubmission(id)} onRefresh={() => void loadDashboard()} /> : null}
+    </>}
     {view === "llm" ? <LlmGenerator onBack={() => setView("dashboard")} onLoadJson={(text, source) => void importPack(text, source)} /> : null}
     {view === "editor" && pack ? <PackEditor pack={pack} issues={issues} saving={busy} onChange={changePack} onSave={() => void saveDraft()} onReview={() => void startReview()} onPreview={() => setView("preview")} onBack={backToDashboard} /> : null}
     {view === "review" && pack ? <SentenceReview pack={pack} reviews={reviews} issues={issues} saving={busy} onReview={markReview} onEdit={() => setView("editor")} onSubmit={() => void submit()} onMarkAllAndSubmit={() => void markAllAndSubmit()} onBack={() => setView("editor")} /> : null}
