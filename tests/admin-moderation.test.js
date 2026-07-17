@@ -68,6 +68,14 @@ test("admin pages and API expose the complete protected moderation surface", () 
   assert.match(moderationApi, /moderation_history_count/);
 });
 
+test("admin moderation controls follow the database transition sequence", () => {
+  const workspace = readFileSync(join(__dirname, "..", "components", "admin-submission-review.tsx"), "utf8");
+  assert.match(workspace, /state === "submitted"[\s\S]*?label: "Approve language", next: "language_approved"/);
+  assert.match(workspace, /state === "language_approved"[\s\S]*?label: "Approve submission", next: "approved"/);
+  assert.match(workspace, /state === "approved"[\s\S]*?label: "Publish", next: "published"/);
+  assert.doesNotMatch(workspace, /Approve & publish/);
+});
+
 function functionBlock(name) {
   const match = migration.match(new RegExp(`create or replace function public\\.${name}\\b([\\s\\S]*?)end \\$\\$;`, "i"));
   assert.ok(match, `missing function ${name}`);
