@@ -9,7 +9,7 @@ import { PackPreview } from "@/components/contributor/pack-preview";
 import { SentenceReview } from "@/components/contributor/sentence-review";
 import { SubmissionStatus, type Feedback, type SubmissionDetail, type SubmissionVersion } from "@/components/contributor/submission-status";
 import {
-  createBlankPack, resetChangedReviews, reviewStatus, validatePackClient,
+  createBlankPack, parsePackClient, resetChangedReviews, reviewStatus, validatePackClient,
   type Draft, type DraftSummary, type Pack, type ReviewStatus, type Submission
 } from "@/lib/contributor-pack";
 import { createClient } from "@/lib/supabase/browser";
@@ -67,8 +67,9 @@ export function ContributeWorkspace() {
   async function importPack(text: string, source: GenerationSource = "manual") {
     setBusy(true);
     try {
-      const result = await api<{ pack: Pack }>("/api/contributor", { method: "POST", body: { action: "validate_pack", pack: text } });
-      setGenerationSource(source); setCreationMethod(source === "manual" ? "upload" : "ai"); setDraft(null); setPack(result.pack); setReviews(new Map()); setDirty(true); setView("editor"); setMessage("Pack loaded. Save it as a draft, then use Review & submit to send it for moderation.");
+      const result = parsePackClient(text);
+      if ("issues" in result) throw new Error(result.issues[0]?.message ?? "Unable to read that pack.");
+      setGenerationSource(source); setCreationMethod(source === "manual" ? "upload" : "ai"); setDraft(null); setPack(result.pack); setReviews(new Map()); setDirty(true); setView("editor"); setMessage("Pack loaded locally. Save it as a draft, then use Review & submit to send it for moderation.");
     } catch (error) { captureError(error, "Unable to import that pack."); }
     finally { setBusy(false); }
   }

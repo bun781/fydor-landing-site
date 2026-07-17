@@ -15,6 +15,9 @@ test("working drafts are local and only final packs are submitted", () => {
   assert.match(api, /Contributor drafts and reviews are stored in this browser/);
   assert.match(migration, /drop table if exists public\.sentence_review_progress/);
   assert.match(migration, /drop table if exists public\.contributor_drafts/);
+  const workspace = source("components", "contribute-workspace.tsx");
+  assert.match(workspace, /parsePackClient\(text\)/);
+  assert.doesNotMatch(workspace, /action: "validate_pack"/);
 });
 
 test("database persists an immutable final pack for moderation", () => {

@@ -8,7 +8,13 @@ function read(): LocalDraft[] {
   try { const value = JSON.parse(window.localStorage.getItem(KEY) ?? "[]"); return Array.isArray(value) ? value : []; }
   catch { return []; }
 }
-function write(drafts: LocalDraft[]) { window.localStorage.setItem(KEY, JSON.stringify(drafts)); }
+function write(drafts: LocalDraft[]) {
+  try { window.localStorage.setItem(KEY, JSON.stringify(drafts)); }
+  catch (error) {
+    if (error instanceof DOMException && error.name === "QuotaExceededError") throw new Error("This browser has no room left for the local draft. Remove an old draft or clear site data, then try again.");
+    throw error;
+  }
+}
 function id() { return crypto.randomUUID(); }
 
 export function listLocalDrafts(): DraftSummary[] {

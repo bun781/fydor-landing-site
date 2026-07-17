@@ -90,6 +90,18 @@ export type Submission = {
 export type ValidationIssue = { path: string; message: string; lessonIndex?: number; sentenceIndex?: number };
 export type FlatSentence = { sentence: Sentence; lesson: Lesson; lessonIndex: number; sentenceIndex: number; globalIndex: number };
 
+export type PackParseResult = { pack: Pack } | { issues: ValidationIssue[] };
+
+/** Parses enough of the pack shape to safely open a local, editable draft.
+ * The server remains the authoritative validator when a contributor submits. */
+export function parsePackClient(source: string): PackParseResult {
+  let value: unknown;
+  try { value = JSON.parse(source); }
+  catch { return { issues: [{ path: "$", message: "Malformed JSON." }] }; }
+  if (!isPackShape(value)) return { issues: [{ path: "$", message: "This is not a supported Fydor pack." }] };
+  return { pack: value };
+}
+
 export function createBlankPack(): Pack {
   const now = new Date().toISOString();
   return {
@@ -171,4 +183,31 @@ export function moveItem<T>(items: T[], from: number, direction: -1 | 1): T[] {
   const next = [...items];
   [next[from], next[to]] = [next[to], next[from]];
   return next;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function isAnnotation(value: unknown): value is Annotation {
+  return isRecord(value) && Object.values(value).every((item) => typeof item === "string" || isStringArray(item));
+}
+
+function isSentence(value: unknown): value is Sentence {
+  if (!isRecord(value) || typeof value.text !== "string" || typeof value.translation !== "string") return false;
+  return ["words", "grammar", "chunks"].every((key) => value[key] === undefined || (Array.isArray(value[key]) && value[key].every(isAnnotation)));
+}
+
+function isLesson(value: unknown): value is Lesson {
+  if (!isRecord(value) || typeof value.language !== "string" || typeof value.baseLanguage !== "string" || typeof value.title !== "string" || !Array.isArray(value.sentences) || !value.sentences.every(isSentence)) return false;
+  return ["description", "source", "level"].every((key) => value[key] === undefined || typeof value[key] === "string") && (value.tags === undefined || isStringArray(value.tags));
+}
+
+function isPackShape(value: unknown): value is Pack {
+  if (!isRecord(value) || value.type !== "fydor_pack" || value.schemaVersion !== 1 || typeof value.id !== "string" || typeof value.title !== "string" || typeof value.version !== "string" || typeof value.language !== "string" || typeof value.baseLanguage !== "string" || !Array.isArray(value.lessons) || !value.lessons.every(isLesson)) return false;
+  return ["description", "license", "level", "createdAt", "updatedAt"].every((key) => value[key] === undefined || typeof value[key] === "string") && (value.tags === undefined || isStringArray(value.tags));
 }
