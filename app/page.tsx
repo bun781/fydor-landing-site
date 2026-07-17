@@ -3,9 +3,9 @@ import { DownloadLink } from "@/components/download-link";
 import { FrontpageScreenshotCarousel } from "@/components/frontpage-screenshot-carousel";
 import { SiteFooter, SiteNav } from "@/components/site-nav";
 
-const desktopRelease = "v4.1.0";
-const windowsDownload = "/downloads/fydor-windows-v4.1.0.exe";
-const macDownload = "/downloads/fydor-mac-v4.1.0.dmg";
+const desktopRelease = "v4.2.0";
+const windowsDownload = "/downloads/fydor-windows-v4.2.0.exe";
+const macDownload = "/downloads/fydor-mac-v4.2.0.dmg";
 
 const WindowsIcon = () => (
   <svg className="platform-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -48,6 +48,7 @@ export default function Home() {
               {desktopRelease} is the current desktop release for Windows and macOS. Your lessons and review
               history stay on your device.
             </p>
+            <Link className="text-link" href="/patch-notes">Read the patch notes <span aria-hidden="true">→</span></Link>
             <Link className="text-link" href="/library">Browse the Exchange <span aria-hidden="true">→</span></Link>
           </div>
 

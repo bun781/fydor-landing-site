@@ -64,6 +64,7 @@ export function SiteNav({ home = false }: { home?: boolean }) {
       <nav className="nav" aria-label="Primary navigation">
         {home && <a href="#download">Download</a>}
         <Link href="/library">Exchange</Link>
+        <Link href="/patch-notes">Patch Notes</Link>
         <Link href="/contribute">Contribute</Link>
         {account?.isAdmin && <Link href="/admin">Admin</Link>}
         {home && <a href="#features">Features</a>}
