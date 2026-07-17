@@ -160,7 +160,10 @@ export function validatePackClient(pack: Pack): ValidationIssue[] {
       (["words", "grammar", "chunks"] as AnnotationKind[]).forEach((kind) => {
         const seen = new Set<string>();
         (sentence[kind] ?? []).forEach((annotation, annotationIndex) => {
-          const surface = kind === "grammar" ? annotation.surface || annotation.pattern : annotation.surface;
+          // A grammar pattern names a teaching rule; it is not necessarily a
+          // verbatim span of the sentence. Only an explicit surface is a
+          // highlight that must occur in the source text.
+          const surface = annotation.surface;
           if (!surface?.trim()) add(`${base}.${kind}[${annotationIndex}]`, "Annotation text is required.", lessonIndex, sentenceIndex);
           else if (!sentence.text.normalize("NFC").includes(surface.normalize("NFC"))) add(`${base}.${kind}[${annotationIndex}]`, "Annotation text must occur in the sentence.", lessonIndex, sentenceIndex);
           const key = JSON.stringify(annotation);
