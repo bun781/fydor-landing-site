@@ -164,8 +164,9 @@ export function validatePackClient(pack: Pack): ValidationIssue[] {
           // verbatim span of the sentence. Only an explicit surface is a
           // highlight that must occur in the source text.
           const surface = annotation.surface;
-          if (!surface?.trim()) add(`${base}.${kind}[${annotationIndex}]`, "Annotation text is required.", lessonIndex, sentenceIndex);
-          else if (!sentence.text.normalize("NFC").includes(surface.normalize("NFC"))) add(`${base}.${kind}[${annotationIndex}]`, "Annotation text must occur in the sentence.", lessonIndex, sentenceIndex);
+          const requiredText = kind === "grammar" ? annotation.pattern : surface;
+          if (!requiredText?.trim()) add(`${base}.${kind}[${annotationIndex}]`, "Annotation text is required.", lessonIndex, sentenceIndex);
+          if (surface?.trim() && !sentence.text.normalize("NFC").includes(surface.normalize("NFC"))) add(`${base}.${kind}[${annotationIndex}]`, "Annotation text must occur in the sentence.", lessonIndex, sentenceIndex);
           const key = JSON.stringify(annotation);
           if (seen.has(key)) add(`${base}.${kind}[${annotationIndex}]`, "Duplicate annotation.", lessonIndex, sentenceIndex);
           seen.add(key);
