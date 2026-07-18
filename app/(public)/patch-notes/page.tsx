@@ -21,6 +21,24 @@ type Release = {
 
 const releases: Release[] = [
   {
+    version: "v4.2.1",
+    date: "July 18, 2026",
+    dateTime: "2026-07-18",
+    status: "Current release",
+    statusTone: "current",
+    summary: "A small quality-of-life patch that makes the library easier to handle and gives the desktop app a calmer, more cohesive color scheme.",
+    highlights: [
+      "Refreshed the desktop palette with softer greens, clearer primary actions, and warm accents for learning states.",
+      "Made the full lesson-library row select a lesson while preserving direct controls for opening, editing, exporting, and sharing it.",
+      "Kept practice setup and loading behavior reliable across Fill Blank and Multiple Choice.",
+      "Published the current first-party lesson packs through the Exchange seed workflow.",
+    ],
+    patches: [
+      { date: "July 18", title: "A calmer study space", detail: "The desktop color system now uses a gentler green foundation, clearer actions, and warmer learning highlights across the app." },
+      { date: "July 18", title: "Less fiddling in the library", detail: "Select a lesson from anywhere on its row, while the row’s open, edit, export, and share controls keep doing exactly what you expect." },
+    ],
+  },
+  {
     version: "v4.2.0",
     date: "July 18, 2026",
     dateTime: "2026-07-18",
@@ -264,14 +282,14 @@ export default function PatchNotesPage() {
             <h1>Fydor, in motion.</h1>
             <p>From a first lesson importer to a full local-first study space: reading, review, portable packs, and a community Exchange—built in public and made to stay yours.</p>
             <div className="patch-notes-hero-links">
-              <Link className="button" href="/#download">Download v4.2.0</Link>
+              <Link className="button" href="/#download">Download v4.2.1</Link>
               <a className="text-link" href="#release-history">Explore the journey <span aria-hidden="true">↓</span></a>
             </div>
           </div>
           <aside className="patch-release-spotlight" aria-label="Current desktop release">
             <span className="eyebrow">Now shipping</span>
-            <strong>v4.2.0</strong>
-            <p>Fydor for Windows and macOS, with faster lesson workflows, reliable practice loading, and simpler guidance.</p>
+            <strong>v4.2.1</strong>
+            <p>Fydor for Windows and macOS, with a calmer color scheme and smoother lesson-library controls.</p>
             <div className="patch-spotlight-meta"><span>July 18, 2026</span><span>Windows + macOS</span></div>
           </aside>
         </section>

@@ -3,9 +3,9 @@ import { DownloadLink } from "@/components/download-link";
 import { FrontpageScreenshotCarousel } from "@/components/frontpage-screenshot-carousel";
 import { SiteFooter, SiteNav } from "@/components/site-nav";
 
-const desktopRelease = "v4.2.0";
-const windowsDownload = "/downloads/fydor-windows-v4.2.0.exe";
-const macDownload = "/downloads/fydor-mac-v4.2.0.dmg";
+const desktopRelease = "v4.2.1";
+const windowsDownload = "/downloads/fydor-windows-v4.2.1.exe";
+const macDownload = "/downloads/fydor-mac-v4.2.1.dmg";
 
 const WindowsIcon = () => (
   <svg className="platform-icon" viewBox="0 0 24 24" aria-hidden="true">
